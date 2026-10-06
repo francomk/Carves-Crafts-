@@ -144,6 +144,13 @@ The pumpkin and bench models live in `zucche/` as Blockbench files. After changi
 resources with `./gradlew convertPumpkinModels` or `./gradlew convertBenchModel` and commit the
 generated files.
 
+## How this mod was checked
+
+[`HOW_WE_VERIFIED_AND_FIXED_THE_BUGS.txt`](HOW_WE_VERIFIED_AND_FIXED_THE_BUGS.txt) is the full
+account of the audit behind 1.0.3: 10 findings — network abuse, oversized chunk data, player data
+loss, unbounded libraries, render cache — what each one was, and what was changed to close it. It
+also says plainly what has **not** been verified yet, including the one finding only partly closed.
+
 ## Contributing
 
 Ideas, bug reports and pull requests are all welcome — [our Discord](https://discord.gg/pQPWr7vfHu)

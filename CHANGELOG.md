@@ -15,6 +15,9 @@
   textures are rebuilt after a resource pack change.
 - A pumpkin placed from an item that already holds a light source now lights up.
 
+The full account of the audit behind these fixes, including what has not been verified, is in
+`HOW_WE_VERIFIED_AND_FIXED_THE_BUGS.txt`.
+
 ## 1.0.0 — first release
 
 - Carving bench, two blocks wide: carve and paint pumpkins one face at a time, with real holes that

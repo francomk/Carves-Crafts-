@@ -1,0 +1,381 @@
+================================================================================
+CARVES & CRAFTS - HOW WE VERIFIED AND FIXED THE BUGS
+================================================================================
+Project : Carves & Crafts 1.0.3
+Stack   : Minecraft 1.21.11 / Fabric loader 0.19.5 / Fabric API 0.141.6+1.21.11 /
+          Mojang mappings / Java 21
+Optional: Mod Menu 17.0.1, JEI 27.44.0.105, Jade 21.1.6, WTHIT 18.2.2
+Scope   : the whole mod - server, client and shared code, data and resource
+          files, the test suite
+
+This is the record of the audit Carves & Crafts went through after its first
+release, and of what changed in 1.0.3 because of it. 10 findings, all closed,
+one of them only partly (see 2.2). It is published for two reasons.
+
+The first: the mod lets players send the server designs of up to 256 KiB, keeps
+a library of them for every player, and shows other people's work to everyone
+nearby. Each of those is a way to hurt a server if it is done carelessly. Anyone
+running the mod deserves to know how hard it was looked at.
+
+The second: the last section says what has NOT been verified. Every audit has a
+boundary. Ours is written down instead of implied.
+
+Nothing here is marketing. Where a fix has a known limit, the limit is stated
+next to it.
+
+
+--------------------------------------------------------------------------------
+HOW TO READ THIS FILE
+--------------------------------------------------------------------------------
+PART 1   How the code was examined
+PART 2   The 10 findings and their fixes
+PART 3   Hypotheses checked and discarded
+PART 4   What came up while fixing
+PART 5   What is still not verified
+
+Severities are the ones used during the audit:
+
+  CRITICAL  item duplication, mass data loss, or the server's authority bypassed
+  HIGH      a concrete exploit: crashing the server, locking players out of an
+            area, losing data
+  MEDIUM    a real defect with limited reach or a harder trigger
+  LOW       a real defect with minor impact
+  INFO      a problem only in unusual setups, or with no gameplay impact
+
+No CRITICAL finding came up. No item duplication path was found (see PART 3 for
+the paths that were checked).
+
+
+================================================================================
+PART 1 - HOW THE CODE WAS EXAMINED
+================================================================================
+
+What the findings rest on:
+
+  * Full reads of every server-side and shared source file, plus the client
+    code that receives data from the server: networking, the carving bench, its
+    menu and block entity, the pumpkin block and block entity, the design codec,
+    schematics, presets, config, the render cache, the local schematic folder.
+
+  * The decompiled Minecraft 1.21.11 sources, not documentation. They settled:
+    that BlockEntity.preRemoveSideEffects drops a Container's contents by
+    default; that LevelChunk skips that call only for flag 256, so a creative
+    break with UPDATE_SUPPRESS_DROPS still drops the bench contents; that
+    AbstractContainerMenu.doClick never looks at Slot.isActive; that
+    TagValueOutput.store keeps only the partial value when encoding fails.
+
+  * The real library jars. javap on DataFixerUpper 9.0.19 - the version
+    Minecraft 1.21.11 ships - showed that Codec.validate is
+    flatXmap(checker, checker), so Codec.string(1, 16) refuses an empty string
+    when saving, not only when loading. The Fabric data attachment sources
+    (2.2.19) showed that every persistent attachment of a player is written
+    through one dispatchedMap codec in a single store call.
+
+  * An isolated harness for the question that decided finding 2.3. A
+    standalone program on DataFixerUpper 9.0.19 rebuilt the author, library and
+    attachment-map codecs and encoded a library with one empty author name.
+    Result: an error with no partial value at every level, so promotePartial
+    never kicks in and the whole attachment map is lost.
+
+  * The mod's own automated game scenarios (./gradlew runScene), which drive a
+    real client with simulated input against an integrated server and check the
+    results: render, bench, tools, schematics, schematics_reload, presets,
+    files, light, compat, bench_parts.
+
+  * A dedicated server with a remote client (runServer -PserverScenario=large
+    plus runRemote -Pscenario=large), where every packet really goes through
+    its codec.
+
+  * ./gradlew build after the fixes. The suite grew from 64 to 71 tests.
+
+What was NOT used: no modified client sending hostile packets, no debugger
+session, no heap or network profiling. See PART 5.
+
+
+================================================================================
+PART 2 - THE 10 FINDINGS AND THEIR FIXES
+================================================================================
+
+Ordered as the audit ordered them: server authority and data loss first, then
+rate limits, gameplay, client rendering, lifecycle.
+
+
+--------------------------------------------------------------------------------
+2.1 [HIGH] A few bytes in, up to 750 KiB out: library pages had no limit
+--------------------------------------------------------------------------------
+Every schematic action packet made the server send back a page of the player's
+library: up to six schematics with their full designs, roughly 125 KiB each in
+the worst case. Paging was exempt from the rate limit by design, and actions
+refused as too fast sent the page anyway. So the rate limit never limited what
+left the server.
+
+A client that loops page requests of about ten bytes each, after importing six
+large designs (free, and allowed by default), gets about 750 KiB back per
+request: an amplification of four to five orders of magnitude. If it also stops
+reading its socket, the server's outgoing buffers keep growing.
+
+FIXED - network/OutboundBudget.java. Every player has a byte budget for designs
+the server sends on request: 4 MiB burst, refilled at 1 MiB per second. A page
+that doesn't fit is skipped; the screen keeps the last page it got and asks
+again on the next click. An action refused as too fast gets no page back at all.
+The same budget covers the design replies of 2.2.
+
+Limit: the numbers are a judgement call, not measured on a live server. A legit
+player browsing a library of nothing but maximum-size designs could see a page
+skipped after a few quick clicks.
+
+
+--------------------------------------------------------------------------------
+2.2 [HIGH] Chunk ban: a chunk full of large designs disconnected everyone nearby
+--------------------------------------------------------------------------------
+A placed pumpkin sent its whole design in chunk data
+(CustomPumpkinBlockEntity.getUpdateTag returned the full save). A design of
+random colours compresses badly, so a couple of dozen such pumpkins in one chunk
+can push the chunk packet past what the protocol accepts. Anyone who came near
+would be disconnected, every time they came back, until an admin cleared the
+area. Trivial in creative, where carving is free.
+
+FIXED - chunk data now carries only the design's hash and canvas density. The
+client asks the server for the designs it is about to draw
+(RequestDesignsPayload, by block position, at most 16 per packet, at most two
+packets per tick) and receives each one in a DesignDataPayload. It files them
+under their hash in client/render/ClientDesigns.java (1024 designs at most;
+retry after 3 seconds if an answer doesn't come). The server answers only for
+loaded pumpkins within view distance plus one chunk, sends each hash once per
+request, and charges every design to the budget of 2.1. Until a design arrives,
+the pumpkin is drawn plain.
+
+PARTLY CLOSED - items still carry their full design in their data component.
+Making items lazy too would change the client's copy of the item: the creative
+inventory sends that copy back to the server, and slot sync compares hashes of
+it. Both would break. An inventory or a shulker box full of different
+maximum-size designs is still a risk; nothing about it got worse.
+
+
+--------------------------------------------------------------------------------
+2.3 [MEDIUM] An empty author name made all of a player's data unsavable
+--------------------------------------------------------------------------------
+The network codec for author names accepted an empty string, the save codec
+did not. The server imported the author list of a .pumpkin file without
+checking it (the comment said "fully re-validated here", but that held for the
+design only). With an empty name in the library, encoding the library failed.
+Because Fabric writes all of a player's persistent attachments in one map with
+no partial result, none of them was saved any more - including those of other
+mods.
+
+On the next login the library was empty, and so was every other mod's player
+attachment: one way to wipe a cooldown or a penalty another mod keeps there. Via
+"copy onto a pumpkin", the same list also reached an item's AUTHORS component.
+The legit client refuses empty names when reading a file, so this took a
+hand-made packet.
+
+FIXED - design/AuthorList.java. The network codec now refuses an empty name, so
+it accepts exactly what the save codec can store. The server checks every
+imported name with Author.isValidName: 1 to 16 characters, no control
+characters, no formatting codes. The .pumpkin reader uses the same check.
+
+
+--------------------------------------------------------------------------------
+2.4 [MEDIUM] Libraries could grow without bound
+--------------------------------------------------------------------------------
+With the default config (maxSchematicsPerPlayer = 0, schematicActionsPerMinute
+= 0) a player could import schematics forever, for free. The whole library
+lives in memory with the player, is rewritten on every player save, and was
+copied in full on every addition. Ten thousand large imports come to about a
+gigabyte.
+
+FIXED - SchematicLibrary.MAX_DESIGN_BYTES: a library holds at most 4 MiB of
+designs, whatever the config says. Thousands of ordinary designs still fit. The
+config defaults are unchanged, and 0 still means "no count limit".
+
+
+--------------------------------------------------------------------------------
+2.5 [LOW] Confirm-and-save skipped the library rate limit
+--------------------------------------------------------------------------------
+Confirming a carving with "also save as schematic" added to the library without
+going through the rate limit, so an admin who turned the limit on still had one
+path left open (free in creative).
+
+FIXED - BenchService.confirmDesign checks the rate limit before saving. The
+carving itself is still applied; only the save is refused, with the usual "slow
+down" message.
+
+
+--------------------------------------------------------------------------------
+2.6 [LOW] After a data pack reload, the wrong preset could be carved
+--------------------------------------------------------------------------------
+A preset's id was its position in a list sorted by file name. A /reload that
+added or removed a preset while someone had the list open shifted the positions,
+and "copy" carved a different design from the one shown, at full tool cost and
+onto a blank pumpkin that can't be uncut.
+
+FIXED - SchematicActionPayload carries the hash of the preset's design as the
+client saw it. The server refuses PRESET_APPLY and PRESET_SAVE when it doesn't
+match ("The presets changed, pick the design again").
+
+
+--------------------------------------------------------------------------------
+2.7 [LOW] Anyone's name could be put on a carving
+--------------------------------------------------------------------------------
+Author UUIDs and names come from the imported file and can't be checked by
+anyone. "Copy onto a pumpkin" stamped them on a real pumpkin, and the tooltip
+said "Carved by X" for whoever the file named.
+
+FIXED - AuthorList has a fromFile flag, set by the server on every import. It
+follows the list through copies, saves and later carvings, and the tooltip adds
+"(names from a file)". The credit to the original artist stays; the claim is no
+longer presented as verified. Saved data keeps its old format when the flag is
+off, so worlds from 1.0.0 load unchanged.
+
+
+--------------------------------------------------------------------------------
+2.8 [LOW] More than 512 designs on screen: wrong textures and rebuild loops
+--------------------------------------------------------------------------------
+The client render cache evicted entries while a frame was still being
+extracted. A released texture slot went straight to the next new design, so
+render states extracted earlier in the same frame drew another design's texture.
+The next frame rebuilt the evicted entry, and the cycle repeated: textures and
+meshes rebuilt every frame.
+
+FIXED - eviction moved to the client tick, and an entry drawn since the last
+tick is never evicted. With more designs on screen than the limit, the cache
+grows to what is on screen instead of thrashing.
+
+
+--------------------------------------------------------------------------------
+2.9 [LOW] A resource pack change kept the old pumpkin textures
+--------------------------------------------------------------------------------
+The render cache's own documentation said it was cleared on resource reload,
+but only disconnect cleared it. After switching resource pack, pumpkins kept the
+skin and flesh read before.
+
+FIXED - a client resource reload listener clears the cache.
+
+
+--------------------------------------------------------------------------------
+2.10 [INFO] A pumpkin could hold a torch while looking unlit
+--------------------------------------------------------------------------------
+An item made with creative pick-block (with data) kept the light source in its
+block entity data, but placement always starts unlit. The result was an unlit
+pumpkin with a torch inside: another torch put in overwrote it, breaking it
+dropped it. Creative or commands only.
+
+FIXED - CustomPumpkinBlock.setPlacedBy sets the light to match the item that is
+actually inside.
+
+
+================================================================================
+PART 3 - HYPOTHESES CHECKED AND DISCARDED
+================================================================================
+Listed because otherwise the sections above look like everything that was
+examined, and because re-opening them without the evidence costs time.
+
+  * Two players in the same bench at once - DISCARDED. The bench remembers its
+    user and refuses a second one while the first still has it open.
+
+  * Clicking slots after the bench was broken - DISCARDED. Vanilla checks
+    stillValid before every click, and stillValid fails once the block entity is
+    gone. Every BenchService entry point checks it as well.
+
+  * Items lost when the bench is broken from its side part, in survival or in
+    creative - DISCARDED. Contents drop through
+    BlockEntity.preRemoveSideEffects, which LevelChunk skips only for flag 256.
+
+  * Two benches dropped from one - DISCARDED. Only the main part has a loot
+    entry, and it is destroyed once.
+
+  * Extra palettes from double-click (PICKUP_ALL) or shift-click on the result
+    slot - DISCARDED. Every take goes through mayPickup and onTake, which
+    consume the 17 inputs, and the result slot holds one palette.
+
+  * Two pumpkins carved for the price of one through the duplicate pumpkin slot
+    on the schematics tab - DISCARDED. Both slots point at the same container
+    index, and pumpkin slots hold one item.
+
+  * Hidden slots used by a modified client - DISCARDED as a finding. doClick
+    ignores isActive, but every slot it reaches is a real, legitimate slot.
+
+  * Torches duplicated by lighting pumpkins - DISCARDED. A lit pumpkin refuses
+    more sources, the stored torch drops once on removal, and the loot table
+    doesn't copy it.
+
+  * Malformed design bytes - DISCARDED. The decoder bounds every length,
+    position, palette index and canvas size, rejects trailing bytes, and every
+    design from the network is re-encoded canonically before use.
+
+  * Uncutting a pixel or carving for free outside creative - DISCARDED.
+    DesignEditRules refuses uncut pixels, and the cost is computed on the server
+    from the old and new designs.
+
+  * A broken or partial server config file - DISCARDED. Parse errors keep the
+    defaults without overwriting the file, and absent keys keep their defaults.
+
+
+================================================================================
+PART 4 - WHAT CAME UP WHILE FIXING
+================================================================================
+
+No regression from the fixes was found: the build, the 71 tests, the game
+scenarios and the dedicated server run all passed. Two things came up along the
+way and are recorded here so nobody mistakes them for regressions.
+
+D1  The bench_parts scenario failed once in three runs on the fixed code ("one
+    bench dropped (0)") and passed the other two, as it did on the original code.
+    The bench code wasn't touched. It looks like a timing issue in the scenario
+    (the drop counted before the item entity shows up), not a defect.
+
+D2  The development dedicated server crashes at startup when Jade is loaded:
+    JadePlugin lives in the client source set, which runServer doesn't put on
+    the classpath, and Jade loads its plugins on the server too. This already
+    happened in 1.0.0. In the released jar both source sets are merged, so a
+    real server most likely loads the class, but that hasn't been tried. The
+    dedicated server run in PART 1 used -Pwthit (WTHIT's plugin is declared
+    client-only).
+
+
+================================================================================
+PART 5 - WHAT IS STILL NOT VERIFIED
+================================================================================
+
+This is the honest boundary of the work. None of the following is a known
+defect, unless it says so; all of it is something nobody has watched happen.
+
+  * No hostile client. Findings 2.1 to 2.5 need hand-made packets. They were
+    established on the code, the libraries' bytecode and, for 2.3, an isolated
+    codec harness. None was reproduced in game, before or after the fix.
+
+  * Placed-pumpkin designs on demand (2.2) were watched working in singleplayer
+    (the render scenario draws carved pumpkins through the new path). They were
+    not watched on a dedicated server; the dedicated run covered the bench,
+    import and the new author codec, not placed pumpkins.
+
+  * The chunk ban itself was never reproduced. The exact frame and
+    decompression limits of the 1.21.11 protocol were not measured; the fix
+    removes the cause without needing them.
+
+  * Items are still a risk (2.2, PARTLY CLOSED).
+
+  * The outbound budget (4 MiB burst, 1 MiB/s) and the 4 MiB library cap were
+    chosen, not measured. Nobody has timed how a crowded area of large designs
+    loads under the budget.
+
+  * No profiling. Memory growth (2.4) and the render cache thrash (2.8) were
+    closed by reading the code; neither was measured.
+
+  * Jade on a real dedicated server (D2) has not been tried.
+
+  * Mod compatibility beyond the dev set (Mod Menu, JEI, Jade, WTHIT) and
+    shaders after 1.0.3 have not been tested.
+
+  * The unit tests cover pure logic: the design codec, edit rules, editor
+    sessions, meshes, the .pumpkin format, the library (including the new byte
+    cap), varieties, the outbound budget and the author codec. 71 tests. The
+    Minecraft path is covered by the game scenarios, not by unit tests.
+
+If you run Carves & Crafts on a server and find something this audit missed,
+tell us: https://discord.gg/pQPWr7vfHu. A reproduction with the steps and what
+you saw is worth more than any amount of further reading.
+
+================================================================================
+End of report. Studio Deriva.
+================================================================================
