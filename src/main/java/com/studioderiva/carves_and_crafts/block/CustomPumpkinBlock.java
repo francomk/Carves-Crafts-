@@ -14,6 +14,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -168,6 +169,21 @@ public class CustomPumpkinBlock extends BaseEntityBlock {
 			stack.consume(1, player); // no-op in creative
 		}
 		return InteractionResult.SUCCESS;
+	}
+
+	/**
+	 * An item carrying saved block entity data (creative pick-block with data) can bring a light source along,
+	 * while placement always starts unlit: match the light to the item that is actually inside.
+	 */
+	@Override
+	public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+		super.setPlacedBy(level, pos, state, placer, stack);
+		if (!level.isClientSide() && level.getBlockEntity(pos) instanceof CustomPumpkinBlockEntity pumpkin) {
+			LightSource source = LightSource.of(pumpkin.getLightItem());
+			if (source != state.getValue(LIGHT)) {
+				level.setBlock(pos, state.setValue(LIGHT, source), Block.UPDATE_ALL);
+			}
+		}
 	}
 
 	@Override

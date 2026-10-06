@@ -14,6 +14,11 @@ import java.util.Optional;
  */
 public record SchematicLibrary(int nextId, List<Schematic> entries) {
 	public static final SchematicLibrary EMPTY = new SchematicLibrary(1, List.of());
+	/**
+	 * Total design bytes a library may hold, whatever the server config says: the whole library lives in memory
+	 * with the player and is rewritten on every player save. Thousands of ordinary designs still fit.
+	 */
+	public static final long MAX_DESIGN_BYTES = 4L * 1024 * 1024;
 
 	public static final Codec<SchematicLibrary> CODEC = RecordCodecBuilder.create(i -> i.group(
 		Codec.INT.fieldOf("next_id").forGetter(SchematicLibrary::nextId),
@@ -29,11 +34,11 @@ public record SchematicLibrary(int nextId, List<Schematic> entries) {
 	}
 
 	/**
-	 * @param maxEntries 0 = unlimited
+	 * @param maxEntries 0 = no count limit ({@link #MAX_DESIGN_BYTES} still applies)
 	 * @return empty if the library is full
 	 */
 	public Optional<Added> add(String rawName, String model, EncodedDesign design, AuthorList authors, long now, int maxEntries) {
-		if (maxEntries > 0 && entries.size() >= maxEntries) {
+		if (maxEntries > 0 && entries.size() >= maxEntries || designBytes() + design.size() > MAX_DESIGN_BYTES) {
 			return Optional.empty();
 		}
 		String name = Schematic.sanitizeName(rawName);
@@ -45,6 +50,10 @@ public record SchematicLibrary(int nextId, List<Schematic> entries) {
 		next.add(schematic);
 		next.addAll(entries);
 		return Optional.of(new Added(new SchematicLibrary(nextId + 1, next), schematic));
+	}
+
+	public long designBytes() {
+		return entries.stream().mapToLong(s -> s.design().size()).sum();
 	}
 
 	public Optional<Schematic> find(int id) {

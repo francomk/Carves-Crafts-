@@ -199,7 +199,9 @@ public class CarvingBenchScreen extends AbstractContainerScreen<CarvingBenchMenu
 	}
 
 	private void sendAction(Action action, int schematicId, String name) {
-		ClientPlayNetworking.send(new SchematicActionPayload(menu.containerId, action, schematicId, name, currentPage()));
+		Schematic target = action.onPresets() ? selectedSchematic(schematicId) : null;
+		String designHash = target != null ? target.design().hash() : "";
+		ClientPlayNetworking.send(new SchematicActionPayload(menu.containerId, action, schematicId, designHash, name, currentPage()));
 		confirmDelete = false;
 		if (action == Action.SAVE_FROM_PUMPKIN || action == Action.RENAME) {
 			nameBox.setValue("");

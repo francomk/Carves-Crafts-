@@ -21,6 +21,9 @@ import net.minecraft.resources.Identifier;
  *
  * <p>Texture ids come from a reusable pool: vanilla memoizes one RenderType per texture id forever,
  * so ids must not grow without bound. Render thread only.
+ *
+ * <p>Entries are evicted in {@link #tick}, never while a frame is being extracted: render states extracted earlier in
+ * the same frame still point at their entry, and a released slot would be handed to another design at once.
  */
 public final class PumpkinRenderCache {
 	public static final PumpkinRenderCache INSTANCE = new PumpkinRenderCache();
@@ -35,6 +38,8 @@ public final class PumpkinRenderCache {
 		final Identifier decorTexture;
 		final PumpkinMesh decorMesh;
 		boolean released;
+		/** Value of {@link #ticks} when last drawn. */
+		long lastUsed;
 
 		private Entry(String key, int slot, Identifier texture, PumpkinMesh mesh, Identifier decorTexture, PumpkinMesh decorMesh) {
 			this.key = key;
@@ -53,6 +58,7 @@ public final class PumpkinRenderCache {
 	private final LinkedHashMap<String, Entry> entries = new LinkedHashMap<>(64, 0.75F, true);
 	private final ArrayDeque<Integer> freeSlots = new ArrayDeque<>();
 	private int nextSlot;
+	private long ticks;
 
 	private PumpkinRenderCache() {
 	}
@@ -62,19 +68,29 @@ public final class PumpkinRenderCache {
 		Ref ref = refs.get(pumpkin);
 		if (ref != null && ref.revision == pumpkin.getRevision() && ref.lit == lit && !ref.entry.released) {
 			entries.get(ref.entry.key); // keep it recently used
-			return ref.entry;
+			return use(ref.entry);
 		}
-		PumpkinDesign design = pumpkin.getDesign() != null ? pumpkin.getDesign() : virginDesign(model);
+		PumpkinDesign design = pumpkin.getDesign();
+		String hash = pumpkin.designHash();
+		if (design == null && hash == null) {
+			design = virginDesign(model);
+			hash = DesignCodec.hash(design);
+		}
 		// same design on another model has another shape and textures
-		String key = model.id() + "/" + DesignCodec.hash(design) + (lit ? "/lit" : "");
+		String key = model.id() + "/" + hash + (lit ? "/lit" : "");
 		Entry entry = entries.get(key);
 		if (entry == null) {
+			if (design == null) {
+				design = ClientDesigns.get(hash, pumpkin.getBlockPos());
+				if (design == null) {
+					return plain(model, lit); // not arrived yet; no Ref, so the next frame looks again
+				}
+			}
 			entry = create(key, design, model, lit);
 			entries.put(key, entry);
-			evictOverflow();
 		}
 		refs.put(pumpkin, new Ref(pumpkin.getRevision(), lit, entry));
-		return entry;
+		return use(entry);
 	}
 
 	/** The model without any design, for pumpkins beyond the design render distance. */
@@ -84,9 +100,30 @@ public final class PumpkinRenderCache {
 		if (entry == null) {
 			entry = create(key, virginDesign(model), model, lit);
 			entries.put(key, entry);
-			evictOverflow();
 		}
+		return use(entry);
+	}
+
+	private Entry use(Entry entry) {
+		entry.lastUsed = ticks;
 		return entry;
+	}
+
+	/**
+	 * Drops the least recently used entries above the limit, but none drawn since the last tick: with more designs
+	 * on screen than the limit, evicting those would rebuild their textures every frame.
+	 */
+	public void tick() {
+		Iterator<Entry> it = entries.values().iterator();
+		while (entries.size() > MAX_ENTRIES && it.hasNext()) {
+			Entry eldest = it.next();
+			if (eldest.lastUsed >= ticks) {
+				break; // access order: everything after it was used more recently
+			}
+			it.remove();
+			release(eldest);
+		}
+		ticks++;
 	}
 
 	/** Releases every texture, e.g. on disconnect or resource reload. */
@@ -112,15 +149,6 @@ public final class PumpkinRenderCache {
 		Identifier decorTexture = model.texture().withPrefix("textures/").withSuffix(".png");
 		return new Entry(key, slot, id, PumpkinMesh.build(design, model.shape(), atlas),
 			decorTexture, PumpkinMesh.decor(model.geometry(), model.shape(), design));
-	}
-
-	private void evictOverflow() {
-		Iterator<Entry> it = entries.values().iterator();
-		while (entries.size() > MAX_ENTRIES && it.hasNext()) {
-			Entry eldest = it.next();
-			it.remove();
-			release(eldest);
-		}
 	}
 
 	private void release(Entry entry) {

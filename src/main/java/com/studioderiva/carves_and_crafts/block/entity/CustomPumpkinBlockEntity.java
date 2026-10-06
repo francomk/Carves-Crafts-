@@ -1,6 +1,7 @@
 package com.studioderiva.carves_and_crafts.block.entity;
 
 import com.studioderiva.carves_and_crafts.CarvesAndCrafts;
+import com.studioderiva.carves_and_crafts.block.CustomPumpkinBlock;
 import com.studioderiva.carves_and_crafts.design.AuthorList;
 import com.studioderiva.carves_and_crafts.design.EncodedDesign;
 import com.studioderiva.carves_and_crafts.design.PumpkinDesign;
@@ -32,8 +33,15 @@ public class CustomPumpkinBlockEntity extends BlockEntity {
 	private static final String DESIGN_KEY = "design";
 	private static final String AUTHORS_KEY = "authors";
 	private static final String LIGHT_KEY = "light";
+	private static final String DESIGN_HASH_KEY = "design_hash";
+	private static final String DENSITY_KEY = "density";
 
 	private @Nullable PumpkinDesign design;
+	/** Encoding of {@link #design}, kept because chunk data, saves and design requests all need it. */
+	private @Nullable EncodedDesign encoded;
+	/** Client side: the update tag carries only these, the design itself comes on request. */
+	private @Nullable String syncedHash;
+	private int syncedDensity;
 	private AuthorList authors = AuthorList.EMPTY;
 	/** Torch or candle put inside (see CustomPumpkinBlock#useItemOn); dropped when the pumpkin is broken. */
 	private ItemStack lightItem = ItemStack.EMPTY;
@@ -46,6 +54,28 @@ public class CustomPumpkinBlockEntity extends BlockEntity {
 
 	public @Nullable PumpkinDesign getDesign() {
 		return design;
+	}
+
+	/** Encoded design, or null for a virgin pumpkin. Server side (the client only has {@link #designHash()}). */
+	public @Nullable EncodedDesign encodedDesign() {
+		if (encoded == null && design != null) {
+			encoded = EncodedDesign.of(design);
+		}
+		return encoded;
+	}
+
+	/** Hash of the design, or null for a virgin pumpkin; known on both sides. */
+	public @Nullable String designHash() {
+		EncodedDesign current = encodedDesign();
+		return current != null ? current.hash() : syncedHash;
+	}
+
+	/** Canvas density of the design, or null for a virgin pumpkin; known on both sides. */
+	public @Nullable Integer density() {
+		if (design != null) {
+			return getBlockState().getBlock() instanceof CustomPumpkinBlock block ? block.model().density(design) : null;
+		}
+		return syncedHash != null && syncedDensity > 0 ? syncedDensity : null;
 	}
 
 	public AuthorList getAuthors() {
@@ -94,6 +124,7 @@ public class CustomPumpkinBlockEntity extends BlockEntity {
 	}
 
 	private void markDesignChanged() {
+		encoded = null;
 		revision++;
 		setChanged();
 		if (level != null && !level.isClientSide()) {
@@ -105,7 +136,7 @@ public class CustomPumpkinBlockEntity extends BlockEntity {
 	protected void saveAdditional(ValueOutput output) {
 		super.saveAdditional(output);
 		if (design != null) {
-			output.store(DESIGN_KEY, EncodedDesign.CODEC, EncodedDesign.of(design));
+			output.store(DESIGN_KEY, EncodedDesign.CODEC, encodedDesign());
 		}
 		if (!authors.isEmpty()) {
 			output.store(AUTHORS_KEY, AuthorList.CODEC, authors);
@@ -119,6 +150,9 @@ public class CustomPumpkinBlockEntity extends BlockEntity {
 	protected void loadAdditional(ValueInput input) {
 		super.loadAdditional(input);
 		design = input.read(DESIGN_KEY, EncodedDesign.CODEC).map(EncodedDesign::decode).orElse(null);
+		encoded = null;
+		syncedHash = input.getString(DESIGN_HASH_KEY).orElse(null);
+		syncedDensity = input.getIntOr(DENSITY_KEY, 0);
 		authors = input.read(AUTHORS_KEY, AuthorList.CODEC).orElse(AuthorList.EMPTY);
 		lightItem = input.read(LIGHT_KEY, ItemStack.CODEC).orElse(ItemStack.EMPTY);
 		revision++;
@@ -129,9 +163,21 @@ public class CustomPumpkinBlockEntity extends BlockEntity {
 		return ClientboundBlockEntityDataPacket.create(this);
 	}
 
+	/**
+	 * Sends the design's hash instead of the design: a chunk full of large designs would otherwise make a chunk
+	 * packet too big for the client to accept, disconnecting everyone who comes near.
+	 */
 	@Override
 	public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-		return saveWithoutMetadata(registries);
+		CompoundTag tag = saveWithoutMetadata(registries);
+		tag.remove(DESIGN_KEY);
+		String hash = designHash();
+		if (hash != null) {
+			tag.putString(DESIGN_HASH_KEY, hash);
+			Integer density = density();
+			tag.putInt(DENSITY_KEY, density != null ? density : 0);
+		}
+		return tag;
 	}
 
 	@Override
@@ -140,9 +186,11 @@ public class CustomPumpkinBlockEntity extends BlockEntity {
 		EncodedDesign encoded = components.get(ModComponents.DESIGN);
 		try {
 			design = encoded == null ? null : encoded.decode();
+			this.encoded = encoded;
 		} catch (IllegalArgumentException e) {
 			CarvesAndCrafts.LOGGER.warn("Dropping invalid pumpkin design at {}: {}", worldPosition, e.getMessage());
 			design = null;
+			this.encoded = null;
 		}
 		authors = components.getOrDefault(ModComponents.AUTHORS, AuthorList.EMPTY);
 		revision++;
@@ -152,7 +200,7 @@ public class CustomPumpkinBlockEntity extends BlockEntity {
 	protected void collectImplicitComponents(DataComponentMap.Builder builder) {
 		super.collectImplicitComponents(builder);
 		if (design != null) {
-			builder.set(ModComponents.DESIGN, EncodedDesign.of(design));
+			builder.set(ModComponents.DESIGN, encodedDesign());
 		}
 		if (!authors.isEmpty()) {
 			builder.set(ModComponents.AUTHORS, authors);

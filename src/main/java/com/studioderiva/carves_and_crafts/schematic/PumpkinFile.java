@@ -101,7 +101,7 @@ public record PumpkinFile(String name, long createdAt, String model, EncodedDesi
 			for (int i = 0; i < authorCount; i++) {
 				UUID id = new UUID(in.readLong(), in.readLong());
 				String authorName = in.readUTF();
-				if (authorName.isEmpty() || authorName.length() > AuthorList.MAX_NAME_LENGTH) {
+				if (!AuthorList.Author.isValidName(authorName)) {
 					throw new DesignFormatException("Bad author name");
 				}
 				authors.add(new AuthorList.Author(id, authorName));

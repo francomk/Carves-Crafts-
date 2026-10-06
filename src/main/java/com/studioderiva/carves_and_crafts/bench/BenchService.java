@@ -14,6 +14,7 @@ import com.studioderiva.carves_and_crafts.model.PumpkinModel;
 import com.studioderiva.carves_and_crafts.model.PumpkinModels;
 import com.studioderiva.carves_and_crafts.network.ConfirmDesignPayload;
 import com.studioderiva.carves_and_crafts.network.ImportSchematicPayload;
+import com.studioderiva.carves_and_crafts.network.OutboundBudget;
 import com.studioderiva.carves_and_crafts.network.SchematicActionPayload;
 import com.studioderiva.carves_and_crafts.network.SchematicPagePayload;
 import com.studioderiva.carves_and_crafts.registry.ModAttachments;
@@ -44,6 +45,8 @@ import org.jspecify.annotations.Nullable;
 public final class BenchService {
 	private static final long RATE_WINDOW_MS = 60_000;
 	private static final Map<UUID, Deque<Long>> recentActions = new HashMap<>();
+	/** Rough size of a page entry besides its design: name, model, authors. */
+	private static final int PAGE_ENTRY_OVERHEAD = 256;
 
 	private BenchService() {
 	}
@@ -96,7 +99,11 @@ public final class BenchService {
 		menu.setPumpkin(updated);
 
 		if (payload.saveSchematic()) {
-			addSchematic(player, "", model, encoded, authors);
+			if (allowAction(player)) {
+				addSchematic(player, "", model, encoded, authors);
+			} else {
+				reject(player, "too_fast");
+			}
 		}
 	}
 
@@ -143,9 +150,9 @@ public final class BenchService {
 		boolean paging = action == SchematicActionPayload.Action.PAGE || action == SchematicActionPayload.Action.PRESET_PAGE;
 		if (!paging && !allowAction(player)) {
 			reject(player, "too_fast");
-		} else {
-			runAction(player, menu, payload);
+			return; // no page back either: the reply would cost far more than the request
 		}
+		runAction(player, menu, payload);
 		if (action.onPresets()) {
 			sendPresetPage(player, payload.page());
 		} else {
@@ -180,6 +187,8 @@ public final class BenchService {
 			case PRESET_APPLY -> {
 				if (preset == null) {
 					reject(player, "missing_schematic");
+				} else if (!preset.design().hash().equals(payload.designHash())) {
+					reject(player, "stale_preset");
 				} else {
 					applySchematic(player, menu, preset);
 				}
@@ -188,6 +197,8 @@ public final class BenchService {
 				PumpkinModel model = preset == null ? null : PumpkinModels.byId(preset.model());
 				if (model == null) {
 					reject(player, "missing_schematic");
+				} else if (!preset.design().hash().equals(payload.designHash())) {
+					reject(player, "stale_preset");
 				} else {
 					addSchematic(player, preset.name(), model, preset.design(), preset.authors());
 				}
@@ -207,6 +218,9 @@ public final class BenchService {
 			reject(player, "import_disabled");
 		} else if (!allowAction(player)) {
 			reject(player, "too_fast");
+			return;
+		} else if (!payload.authors().isValid()) {
+			reject(player, "invalid");
 		} else {
 			PumpkinModel model = PumpkinModels.byId(payload.model());
 			EncodedDesign design = null;
@@ -222,7 +236,7 @@ public final class BenchService {
 			} else if (design == null || !model.fits(design.decode())) {
 				reject(player, "invalid");
 			} else {
-				addSchematic(player, payload.name(), model, design, payload.authors());
+				addSchematic(player, payload.name(), model, design, payload.authors().asFromFile());
 			}
 		}
 		sendPage(player, payload.page());
@@ -281,7 +295,7 @@ public final class BenchService {
 		SchematicLibrary library = library(player);
 		int pageCount = library.pageCount(SchematicPagePayload.PAGE_SIZE);
 		int clamped = Math.max(0, Math.min(page, pageCount - 1));
-		ServerPlayNetworking.send(player, new SchematicPagePayload(clamped, pageCount, library.entries().size(),
+		send(player, new SchematicPagePayload(clamped, pageCount, library.entries().size(),
 			library.page(clamped, SchematicPagePayload.PAGE_SIZE), false));
 	}
 
@@ -291,7 +305,15 @@ public final class BenchService {
 		int pageCount = Math.max(1, (presets.size() + size - 1) / size);
 		int clamped = Math.max(0, Math.min(page, pageCount - 1));
 		List<Schematic> entries = presets.subList(Math.min(clamped * size, presets.size()), Math.min((clamped + 1) * size, presets.size()));
-		ServerPlayNetworking.send(player, new SchematicPagePayload(clamped, pageCount, presets.size(), entries, true));
+		send(player, new SchematicPagePayload(clamped, pageCount, presets.size(), entries, true));
+	}
+
+	/** Pages are skipped when over budget; the screen keeps the last page it got and asks again on the next click. */
+	private static void send(ServerPlayer player, SchematicPagePayload page) {
+		long bytes = page.entries().stream().mapToLong(s -> s.design().size() + PAGE_ENTRY_OVERHEAD).sum();
+		if (OutboundBudget.tryConsume(player, bytes)) {
+			ServerPlayNetworking.send(player, page);
+		}
 	}
 
 	private static SchematicLibrary library(ServerPlayer player) {

@@ -86,7 +86,7 @@ are shown greyed out and refused on import.
 
 ```jsonc
 {
-  "maxSchematicsPerPlayer": 0,     // 0 = no limit
+  "maxSchematicsPerPlayer": 0,     // 0 = no count limit (libraries are always capped at 4 MiB of designs)
   "schematicActionsPerMinute": 0,  // rate limit on save/rename/delete/copy/import, 0 = none
   "allowSchematicImport": true     // let players import .pumpkin files
 }

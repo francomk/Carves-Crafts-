@@ -528,7 +528,7 @@ public final class DevScenarios {
 			expect(!button(mc, "gui.carves_and_crafts.schematic.copy").active, "copy disabled for another model");
 			shot(mc, "p6b_library_other_model");
 			ClientPlayNetworking.send(new SchematicActionPayload(menu(mc).containerId, SchematicActionPayload.Action.APPLY,
-				((CarvingBenchScreen) mc.screen).selectedSchematic(), "", 0));
+				((CarvingBenchScreen) mc.screen).selectedSchematic(), "", "", 0));
 		}));
 		steps.add(new Step(10, mc -> serverPlayer(mc, sp ->
 			expect(!menuOf(sp).getPumpkin().has(ModComponents.DESIGN), "server refuses a schematic of another model"))));

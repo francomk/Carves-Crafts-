@@ -9,6 +9,7 @@ import com.studioderiva.carves_and_crafts.design.CanvasFace;
 import com.studioderiva.carves_and_crafts.design.CanvasLayout;
 import com.studioderiva.carves_and_crafts.design.EncodedDesign;
 import com.studioderiva.carves_and_crafts.design.PumpkinDesign;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -89,5 +90,32 @@ class SchematicLibraryTest {
 		assertEquals("Alice", authors.names().get(0));
 		AuthorList full = authors;
 		assertSame(full, full.with(UUID.randomUUID(), "Late"));
+	}
+
+	@Test
+	void totalDesignBytesAreCappedEvenWithoutACountLimit() {
+		PumpkinDesign noisy = new PumpkinDesign(CanvasLayout.uniform(CanvasFace.ALL_MASK, 64, 64));
+		int color = 1;
+		for (CanvasFace face : CanvasFace.values()) {
+			for (int y = 0; y < 64; y++) {
+				for (int x = 0; x < 64; x++) {
+					noisy.paint(face, x, y, color);
+					color = (color * 1103515245 + 12345) & 0xFFFFFF;
+				}
+			}
+		}
+		EncodedDesign big = EncodedDesign.of(noisy);
+		SchematicLibrary library = SchematicLibrary.EMPTY;
+		int added = 0;
+		while (true) {
+			Optional<SchematicLibrary.Added> next = library.add("big", "custom_pumpkin", big, AuthorList.EMPTY, 0, 0);
+			if (next.isEmpty()) {
+				break;
+			}
+			library = next.get().library();
+			added++;
+		}
+		assertEquals(SchematicLibrary.MAX_DESIGN_BYTES / big.size(), added);
+		assertTrue(library.designBytes() <= SchematicLibrary.MAX_DESIGN_BYTES);
 	}
 }
