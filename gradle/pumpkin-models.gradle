@@ -1,0 +1,156 @@
+// Converts the Blockbench pumpkin models in zucche/ into mod resources.
+// Run by hand after a model changes: ./gradlew convertPumpkinModels  (generated files are committed)
+//
+// For every entry of zucche/pumpkins.json it writes:
+//   assets/<mod>/textures/block/<id>.png      skin texture
+//   assets/<mod>/models/block/<id>.json       vanilla model (item icon, particles)
+//   assets/<mod>/items/<id>.json, blockstates/<id>.json
+//   data/<mod>/loot_table/blocks/<id>.json
+//   <mod>/geometry/<id>.json                  carvable body + decorations, read by the mod on both sides
+
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+
+tasks.register('convertPumpkinModels') {
+	group = 'carves_and_crafts'
+	description = 'Converts zucche/*.bbmodel into pumpkin model resources'
+	def sourceDir = file('zucche')
+	def resources = file('src/main/resources')
+	def modId = project.mod_id
+
+	doLast {
+		def slurper = new JsonSlurper()
+		def config = slurper.parse(new File(sourceDir, 'pumpkins.json')).findAll { k, v -> !k.startsWith('_') }
+		def directions = ['north', 'south', 'east', 'west', 'up', 'down']
+		def axes = ['x', 'y', 'z']
+		def round = { num -> Math.round(((Number) num).doubleValue() * 10000) / 10000.0d }
+		def vec = { list -> list.collect { round(it) } }
+		def write = { File file, Object json ->
+			file.parentFile.mkdirs()
+			file.text = JsonOutput.prettyPrint(JsonOutput.toJson(json)) + '\n'
+		}
+
+		config.each { String id, Map entry ->
+			def fail = { String msg -> throw new GradleException("${entry.source}: ${msg}") }
+			def bb = slurper.parse(new File(sourceDir, entry.source + '.bbmodel'))
+			if (bb.meta?.model_format != 'java_block') {
+				fail("expected a Java Block/Item model, found ${bb.meta?.model_format}")
+			}
+			if (bb.textures.size() != 1) {
+				fail("expected exactly one texture, found ${bb.textures.size()}")
+			}
+			def texture = bb.textures[0]
+			def uvScale = 16.0d / ((Number) (texture.uv_width ?: bb.resolution?.width ?: 16)).doubleValue()
+			def uvScaleV = 16.0d / ((Number) (texture.uv_height ?: bb.resolution?.height ?: 16)).doubleValue()
+
+			def elements = bb.elements.collect { e ->
+				if ((e.type ?: 'cube') != 'cube') {
+					fail("element ${e.name} is not a cube")
+				}
+				def faces = [:]
+				directions.each { dir ->
+					def face = e.faces?.get(dir)
+					if (face != null && face.texture != null) {
+						if (face.rotation) {
+							fail("element ${e.name} face ${dir} has a rotated UV (not supported)")
+						}
+						def uv = face.uv
+						faces[dir] = [round(uv[0] * uvScale), round(uv[1] * uvScaleV), round(uv[2] * uvScale), round(uv[3] * uvScaleV)]
+					}
+				}
+				def rotation = null
+				def rot = e.rotation ?: [0, 0, 0]
+				def turned = (0..2).findAll { rot[it] != 0 }
+				if (turned.size() > 1) {
+					fail("element ${e.name} rotates on more than one axis")
+				}
+				if (turned) {
+					rotation = [axis: axes[turned[0]], angle: round(rot[turned[0]]), origin: vec(e.origin)]
+				}
+				def out = [name: e.name, from: vec(e.from), to: vec(e.to), faces: faces]
+				if (rotation != null) {
+					out.rotation = rotation
+				}
+				(out.from + out.to).each { c ->
+					if (c < -16 || c > 32) {
+						fail("element ${e.name} leaves the -16..32 model range")
+					}
+				}
+				out
+			}
+
+			def bodies = elements.findAll { it.name == entry.body }
+			if (bodies.size() != 1) {
+				fail("expected one element named '${entry.body}' (the carvable body), found ${bodies.size()}")
+			}
+			def body = bodies[0]
+			if (body.rotation != null) {
+				fail("the body can't be rotated")
+			}
+			(0..2).each { i ->
+				def size = body.to[i] - body.from[i]
+				if (size != Math.rint(size) || size < 3) {
+					fail("body size on ${axes[i]} must be a whole number of pixels >= 3, found ${size}")
+				}
+			}
+			directions.each { dir ->
+				if (!body.faces.containsKey(dir)) {
+					fail("body face ${dir} has no texture")
+				}
+			}
+
+			def textureRef = "${modId}:block/${id}"
+			Files.copy(new File(sourceDir, texture.name).toPath(), new File(resources, "assets/${modId}/textures/block/${id}.png").toPath(),
+				StandardCopyOption.REPLACE_EXISTING)
+
+			write(new File(resources, "${modId}/geometry/${id}.json"), [
+				texture: textureRef,
+				body: body,
+				decor: elements.findAll { !it.is(body) },
+			])
+
+			write(new File(resources, "assets/${modId}/models/block/${id}.json"), [
+				parent: 'minecraft:block/block',
+				textures: [skin: textureRef, particle: textureRef],
+				elements: elements.collect { e ->
+					def out = [from: e.from, to: e.to, faces: e.faces.collectEntries { dir, uv -> [dir, [uv: uv, texture: '#skin']] }]
+					if (e.rotation != null) {
+						out.rotation = e.rotation
+					}
+					out
+				},
+			])
+
+			write(new File(resources, "assets/${modId}/items/${id}.json"), [
+				model: [type: 'minecraft:model', model: "${modId}:block/${id}"],
+			])
+
+			// the block itself is drawn by the block entity renderer; the model only provides the particle texture
+			write(new File(resources, "assets/${modId}/blockstates/${id}.json"), [
+				variants: ['': [model: "${modId}:block/${id}"]],
+			])
+
+			write(new File(resources, "data/${modId}/loot_table/blocks/${id}.json"), [
+				type: 'minecraft:block',
+				pools: [[
+					bonus_rolls: 0.0,
+					conditions: [[condition: 'minecraft:survives_explosion']],
+					entries: [[
+						type: 'minecraft:item',
+						functions: [[
+							function: 'minecraft:copy_components',
+							include: ["${modId}:design", "${modId}:authors"],
+							source: 'block_entity',
+						]],
+						name: "${modId}:${id}",
+					]],
+					rolls: 1.0,
+				]],
+				random_sequence: "${modId}:blocks/${id}",
+			])
+			println("Converted ${entry.source} -> ${id} (body ${body.to[0] - body.from[0]}x${body.to[1] - body.from[1]}x${body.to[2] - body.from[2]} px, ${elements.size() - 1} decorations)")
+		}
+	}
+}

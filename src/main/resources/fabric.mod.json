@@ -1,0 +1,45 @@
+{
+	"schemaVersion": 1,
+	"id": "carves_and_crafts",
+	"version": "${version}",
+	"name": "Carves & Crafts",
+	"description": "Carve and paint pumpkins at the carving bench: cut real holes, paint any color, light them with torches and candles, save and share your designs. Nine pumpkin models to grow and find in the wild.",
+	"authors": [
+		"Studio Deriva"
+	],
+	"contact": {
+		"discord": "https://discord.gg/pQPWr7vfHu"
+	},
+	"license": "MIT",
+	"icon": "assets/carves_and_crafts/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.studioderiva.carves_and_crafts.CarvesAndCrafts"
+		],
+		"client": [
+			"com.studioderiva.carves_and_crafts.client.CarvesAndCraftsClient"
+		],
+		"modmenu": [
+			"com.studioderiva.carves_and_crafts.client.compat.ModMenuIntegration"
+		],
+		"jei_mod_plugin": [
+			"com.studioderiva.carves_and_crafts.client.compat.JeiIntegration"
+		],
+		"jade": [
+			"com.studioderiva.carves_and_crafts.client.compat.JadePlugin"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"modmenu": "*",
+		"jei": "*",
+		"jade": "*",
+		"wthit": "*"
+	}
+}

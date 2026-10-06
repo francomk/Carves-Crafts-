@@ -1,0 +1,9 @@
+{
+  "carves_and_crafts:pumpkin": {
+    "entrypoints": {
+      "client": "com.studioderiva.carves_and_crafts.client.compat.WthitPlugin"
+    },
+    "side": "client",
+    "required": []
+  }
+}

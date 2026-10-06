@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "fabric:type": "fabric:components",
+      "base": [
+        "carves_and_crafts:classic_pumpkin",
+        "carves_and_crafts:mini_yellow_pumpkin",
+        "carves_and_crafts:warty_pumpkin"
+      ],
+      "components": {
+        "!carves_and_crafts:design": {}
+      }
+    }
+  ],
+  "result": {
+    "count": 4,
+    "id": "carves_and_crafts:field_pumpkin_seeds"
+  }
+}

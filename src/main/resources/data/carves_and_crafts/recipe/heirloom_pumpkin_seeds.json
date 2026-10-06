@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "fabric:type": "fabric:components",
+      "base": [
+        "carves_and_crafts:white_pumpkin",
+        "carves_and_crafts:blue_pumpkin",
+        "carves_and_crafts:cinderella_pumpkin"
+      ],
+      "components": {
+        "!carves_and_crafts:design": {}
+      }
+    }
+  ],
+  "result": {
+    "count": 4,
+    "id": "carves_and_crafts:heirloom_pumpkin_seeds"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "carves_and_crafts:item/carving_knife"
+  }
+}

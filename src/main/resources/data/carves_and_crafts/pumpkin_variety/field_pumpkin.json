@@ -1,0 +1,16 @@
+{
+  "variants": [
+    {
+      "model": "classic_pumpkin",
+      "weight": 70
+    },
+    {
+      "model": "mini_yellow_pumpkin",
+      "weight": 20
+    },
+    {
+      "model": "warty_pumpkin",
+      "weight": 10
+    }
+  ]
+}

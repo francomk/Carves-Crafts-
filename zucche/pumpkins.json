@@ -1,0 +1,12 @@
+{
+  "_comment": "Pumpkin models imported by ./gradlew convertPumpkinModels. Key = mod id; source = .bbmodel name without extension; body = name of the carvable element. Files not listed here are ignored.",
+  "classic_pumpkin": { "source": "zucca_classica", "body": "corpo" },
+  "white_pumpkin": { "source": "zucca_bianca", "body": "corpo" },
+  "blue_pumpkin": { "source": "zucca_blu", "body": "corpo" },
+  "butternut_squash": { "source": "zucca_butternut", "body": "bulbo" },
+  "cinderella_pumpkin": { "source": "zucca_cenerentola", "body": "corpo" },
+  "kabocha_squash": { "source": "zucca_kabocha", "body": "corpo" },
+  "mini_yellow_pumpkin": { "source": "zucca_mini_gialla", "body": "corpo" },
+  "turban_squash": { "source": "zucca_turbante", "body": "corpo" },
+  "warty_pumpkin": { "source": "zucca_verrucosa", "body": "corpo" }
+}

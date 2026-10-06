@@ -1,0 +1,108 @@
+plugins {
+	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+}
+
+repositories {
+	// optional integrations (compile-only: none of them ends up in the mod jar)
+	maven { url = "https://maven.terraformersmc.com/releases/"; content { includeGroup "com.terraformersmc" } }
+	maven { url = "https://maven.blamejared.com/"; content { includeGroup "mezz.jei" } }
+	maven { url = "https://api.modrinth.com/maven"; content { includeGroup "maven.modrinth" } }
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	runs {
+		// opens run/saves/scene directly; build the scene with the headless server first
+		scene {
+			inherit client
+			name "Client (test scene)"
+			programArgs "--quickPlaySingleplayer", "scene"
+			// -Pscenario=bench to pick another script (see DevScenarios)
+			vmArg "-Dcarves_and_crafts.scenario=${project.findProperty('scenario') ?: 'render'}"
+		}
+		// joins the dev server (runServer) for scenarios that need a dedicated server, e.g. -Pscenario=large
+		remote {
+			inherit client
+			name "Client (dev server)"
+			programArgs "--quickPlayMultiplayer", "localhost:25565"
+			vmArg "-Dcarves_and_crafts.scenario=${project.findProperty('scenario') ?: 'large'}"
+		}
+		server {
+			// -PserverScenario=large: server half of the dedicated-server scenario (see DevServerScenario)
+			vmArg "-Dcarves_and_crafts.serverScenario=${project.findProperty('serverScenario') ?: ''}"
+		}
+	}
+
+	mods {
+		"${project.mod_id}" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+dependencies {
+	// versions are in gradle.properties
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings loom.officialMojangMappings()
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Optional integrations. Compile-only; the dev client loads ModMenu, JEI and Jade, or WTHIT instead of Jade
+	// with -Pwthit (the two tooltip mods do the same job).
+	modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+	modLocalRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
+	modCompileOnly "mezz.jei:jei-${project.minecraft_version}-fabric-api:${project.jei_version}"
+	modLocalRuntime "mezz.jei:jei-${project.minecraft_version}-fabric:${project.jei_version}"
+	modLocalRuntime "maven.modrinth:mezzconfig:${project.mezzconfig_version}" // required by JEI at runtime
+	modCompileOnly "maven.modrinth:jade:${project.jade_version}"
+	modCompileOnly "maven.modrinth:wthit:${project.wthit_version}"
+	if (project.hasProperty("wthit")) {
+		modLocalRuntime "maven.modrinth:wthit:${project.wthit_version}"
+		modLocalRuntime "maven.modrinth:badpackets:${project.badpackets_version}" // required by WTHIT at runtime
+	} else {
+		modLocalRuntime "maven.modrinth:jade:${project.jade_version}"
+	}
+
+	testImplementation platform("org.junit:junit-bom:${project.junit_version}")
+	testImplementation "org.junit.jupiter:junit-jupiter"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+test {
+	useJUnitPlatform()
+}
+
+processResources {
+	def version = project.version
+	inputs.property "version", version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 21
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+	def projectName = project.name
+	inputs.property "projectName", projectName
+
+	from("LICENSE") {
+		rename { "${it}_$projectName"}
+	}
+}
+
+apply from: "gradle/pumpkin-models.gradle"
+apply from: "gradle/bench-model.gradle"

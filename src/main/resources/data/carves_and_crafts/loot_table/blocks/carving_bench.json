@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        },
+        {
+          "condition": "minecraft:block_state_property",
+          "block": "carves_and_crafts:carving_bench",
+          "properties": {
+            "part": "main"
+          }
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "carves_and_crafts:carving_bench"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "carves_and_crafts:blocks/carving_bench"
+}

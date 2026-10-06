@@ -1,0 +1,129 @@
+// Converts the carving bench's Blockbench model (zucche/carving_table.bbmodel) into mod resources.
+// Run by hand after the model changes: ./gradlew convertBenchModel  (generated files are committed)
+//
+// Writes:
+//   assets/<mod>/textures/block/<texture name>.png   every texture embedded in the model, except pumpkin skins
+//                                                   (zucca_*.png: the mod's own pumpkin texture is used instead)
+//   assets/<mod>/models/block/carving_bench.json     vanilla block model (multi-texture, any rotation)
+//
+// Unlike the pumpkins, the bench is an ordinary block model: rotations may use several axes at once (supported by
+// 1.21.11 block models as "x"/"y"/"z" Euler angles) and faces may rotate their UVs. Textures whose size isn't a
+// power of two are padded with transparent pixels (an odd-sized texture lowers mipmapping for the whole block atlas).
+
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.awt.image.BufferedImage
+import javax.imageio.ImageIO
+
+tasks.register('convertBenchModel') {
+	group = 'carves_and_crafts'
+	description = 'Converts zucche/carving_table.bbmodel into the carving bench block model'
+	def sourceDir = file('zucche')
+	def resources = file('src/main/resources')
+	def modId = project.mod_id
+
+	doLast {
+		def slurper = new JsonSlurper()
+		def bb = slurper.parse(new File(sourceDir, 'carving_table.bbmodel'))
+		def fail = { String msg -> throw new GradleException("carving_table: ${msg}") }
+		if (bb.meta?.model_format != 'java_block') {
+			fail("expected a Java Block/Item model, found ${bb.meta?.model_format}")
+		}
+		// pumpkin textures embedded in the bench model: replaced by the converted pumpkin texture of the same source
+		def pumpkins = slurper.parse(new File(sourceDir, 'pumpkins.json')).findAll { k, v -> !k.startsWith('_') }
+		def pumpkinBySource = pumpkins.collectEntries { id, entry -> [(entry.source + '.png'): id] }
+
+		def round = { num -> Math.round(((Number) num).doubleValue() * 10000) / 10000.0d }
+		def vec = { list -> list.collect { round(it) } }
+		def powerOfTwo = { int n -> int p = 1; while (p < n) { p *= 2 }; p }
+
+		def textureKeys = [:]   // bbmodel texture id -> model texture variable
+		def textureRefs = [:]   // model texture variable -> resource id
+		def uvScales = [:]      // bbmodel texture id -> [u scale, v scale] from bbmodel UV units to 0..16 of the file
+		bb.textures.each { t ->
+			def name = (t.name as String)
+			if (!name.endsWith('.png')) {
+				fail("texture ${name} is not a .png")
+			}
+			def key = (name - '.png')
+			def image = ImageIO.read(new ByteArrayInputStream(Base64.decoder.decode((t.source as String).split(',', 2)[1])))
+			int w = image.width
+			int h = image.height
+			def uvWidth = ((Number) (t.uv_width ?: bb.resolution?.width ?: 16)).doubleValue()
+			def uvHeight = ((Number) (t.uv_height ?: bb.resolution?.height ?: 16)).doubleValue()
+			def pumpkinId = pumpkinBySource[name]
+			if (pumpkinId != null) {
+				key = pumpkinId
+				textureRefs[key] = "${modId}:block/${pumpkinId}"
+				uvScales[t.id as String] = [16.0d / uvWidth, 16.0d / uvHeight]
+			} else {
+				int pw = powerOfTwo(w)
+				int ph = powerOfTwo(h)
+				def out = image
+				if (pw != w || ph != h) {
+					out = new BufferedImage(pw, ph, BufferedImage.TYPE_INT_ARGB)
+					out.createGraphics().with { drawImage(image, 0, 0, null); dispose() }
+					println("Padded ${name} from ${w}x${h} to ${pw}x${ph}")
+				}
+				def file = new File(resources, "assets/${modId}/textures/block/${name}")
+				file.parentFile.mkdirs()
+				ImageIO.write(out, 'png', file)
+				textureRefs[key] = "${modId}:block/${key}"
+				// a bbmodel UV unit covers w/uvWidth pixels; the model's 0..16 range covers the padded width
+				uvScales[t.id as String] = [16.0d * w / (uvWidth * pw), 16.0d * h / (uvHeight * ph)]
+			}
+			textureKeys[t.id as String] = key
+		}
+
+		def elements = bb.elements.findAll { it.export != false }.collect { e ->
+			if ((e.type ?: 'cube') != 'cube') {
+				fail("element ${e.name} is not a cube")
+			}
+			def faces = [:]
+			['north', 'south', 'east', 'west', 'up', 'down'].each { dir ->
+				def face = e.faces?.get(dir)
+				if (face != null && face.texture != null) {
+					def texId = face.texture as String
+					def scale = uvScales[texId]
+					if (scale == null) {
+						fail("element ${e.name} face ${dir} uses an unknown texture ${texId}")
+					}
+					def uv = face.uv
+					def out = [uv: [round(uv[0] * scale[0]), round(uv[1] * scale[1]), round(uv[2] * scale[0]), round(uv[3] * scale[1])],
+					           texture: '#' + textureKeys[texId]]
+					if (face.rotation) {
+						out.rotation = face.rotation as int
+					}
+					faces[dir] = out
+				}
+			}
+			if (faces.isEmpty()) {
+				fail("element ${e.name} has no textured face")
+			}
+			def out = [from: vec(e.from), to: vec(e.to)]
+			def rot = e.rotation ?: [0, 0, 0]
+			def turned = (0..2).findAll { rot[it] != 0 }
+			if (turned.size() == 1) {
+				out.rotation = [angle: round(rot[turned[0]]), axis: ['x', 'y', 'z'][turned[0]], origin: vec(e.origin)]
+			} else if (turned.size() > 1) {
+				out.rotation = [x: round(rot[0]), y: round(rot[1]), z: round(rot[2]), origin: vec(e.origin)]
+			}
+			out.faces = faces
+			(out.from + out.to).each { c ->
+				if (c < -16 || c > 32) {
+					fail("element ${e.name} leaves the -16..32 model range")
+				}
+			}
+			out
+		}
+
+		def textures = [particle: textureRefs['carving_table_side'] ?: textureRefs.values().first()] + textureRefs
+		def model = new File(resources, "assets/${modId}/models/block/carving_bench.json")
+		model.text = JsonOutput.prettyPrint(JsonOutput.toJson([
+			parent: 'minecraft:block/block',
+			textures: textures,
+			elements: elements,
+		])) + '\n'
+		println("Converted carving_table -> carving_bench (${elements.size()} elements, textures ${textureRefs.keySet()})")
+	}
+}

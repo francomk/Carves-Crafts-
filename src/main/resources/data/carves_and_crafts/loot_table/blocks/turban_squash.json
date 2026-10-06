@@ -1,0 +1,31 @@
+{
+    "type": "minecraft:block",
+    "pools": [
+        {
+            "bonus_rolls": 0.0,
+            "conditions": [
+                {
+                    "condition": "minecraft:survives_explosion"
+                }
+            ],
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "functions": [
+                        {
+                            "function": "minecraft:copy_components",
+                            "include": [
+                                "carves_and_crafts:design",
+                                "carves_and_crafts:authors"
+                            ],
+                            "source": "block_entity"
+                        }
+                    ],
+                    "name": "carves_and_crafts:turban_squash"
+                }
+            ],
+            "rolls": 1.0
+        }
+    ],
+    "random_sequence": "carves_and_crafts:blocks/turban_squash"
+}

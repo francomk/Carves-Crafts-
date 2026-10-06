@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "carves_and_crafts:item/color_palette"
+  }
+}

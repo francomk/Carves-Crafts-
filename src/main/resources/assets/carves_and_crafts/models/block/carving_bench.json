@@ -1,0 +1,1233 @@
+{
+    "parent": "minecraft:block/block",
+    "textures": {
+        "particle": "carves_and_crafts:block/carving_table_side",
+        "carving_table_side": "carves_and_crafts:block/carving_table_side",
+        "carving_table_top": "carves_and_crafts:block/carving_table_top",
+        "carving_table_book": "carves_and_crafts:block/carving_table_book",
+        "carving_table_ink": "carves_and_crafts:block/carving_table_ink",
+        "carving_table": "carves_and_crafts:block/carving_table",
+        "carving_table_cloth": "carves_and_crafts:block/carving_table_cloth",
+        "mini_yellow_pumpkin": "carves_and_crafts:block/mini_yellow_pumpkin"
+    },
+    "elements": [
+        {
+            "from": [
+                -0.5171,
+                14.0,
+                5.5477
+            ],
+            "to": [
+                7.4829,
+                16.0,
+                11.5477
+            ],
+            "rotation": {
+                "angle": 22.5,
+                "axis": "y",
+                "origin": [
+                    16.4829,
+                    15.0,
+                    11.5477
+                ]
+            },
+            "faces": {
+                "north": {
+                    "uv": [
+                        1.0,
+                        12.0,
+                        9.0,
+                        14.0
+                    ],
+                    "texture": "#carving_table_book"
+                },
+                "south": {
+                    "uv": [
+                        14.0,
+                        0.0,
+                        16.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 270
+                },
+                "east": {
+                    "uv": [
+                        0.0,
+                        10.0,
+                        6.0,
+                        12.0
+                    ],
+                    "texture": "#carving_table_book"
+                },
+                "west": {
+                    "uv": [
+                        0.0,
+                        9.0,
+                        6.0,
+                        11.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 180
+                },
+                "up": {
+                    "uv": [
+                        8.0,
+                        0.0,
+                        14.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 270
+                },
+                "down": {
+                    "uv": [
+                        8.0,
+                        0.0,
+                        14.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 90
+                }
+            }
+        },
+        {
+            "from": [
+                -1.0,
+                15.6637,
+                5.7821
+            ],
+            "to": [
+                9.0,
+                16.6637,
+                12.7821
+            ],
+            "rotation": {
+                "x": -23.2109,
+                "y": -13.8345,
+                "z": 5.8546,
+                "origin": [
+                    3.0,
+                    16.1637,
+                    9.2821
+                ]
+            },
+            "faces": {
+                "north": {
+                    "uv": [
+                        6.0,
+                        8.0,
+                        7.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 180
+                },
+                "south": {
+                    "uv": [
+                        6.0,
+                        8.0,
+                        7.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 180
+                },
+                "east": {
+                    "uv": [
+                        0.0,
+                        8.0,
+                        1.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 180
+                },
+                "west": {
+                    "uv": [
+                        0.0,
+                        8.0,
+                        1.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 180
+                },
+                "up": {
+                    "uv": [
+                        1.0,
+                        8.0,
+                        12.0,
+                        15.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 180
+                },
+                "down": {
+                    "uv": [
+                        1.0,
+                        8.0,
+                        12.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "from": [
+                4.0,
+                16.6997,
+                12.537
+            ],
+            "to": [
+                10.0,
+                17.6997,
+                20.537
+            ],
+            "rotation": {
+                "x": -23.2109,
+                "y": -13.8345,
+                "z": 5.8546,
+                "origin": [
+                    19.0,
+                    10.0,
+                    15.0
+                ]
+            },
+            "faces": {
+                "north": {
+                    "uv": [
+                        0.0,
+                        7.0,
+                        6.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book"
+                },
+                "south": {
+                    "uv": [
+                        0.0,
+                        7.0,
+                        6.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 180
+                },
+                "east": {
+                    "uv": [
+                        6.0,
+                        0.0,
+                        7.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 90
+                },
+                "west": {
+                    "uv": [
+                        6.0,
+                        0.0,
+                        7.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 90
+                },
+                "up": {
+                    "uv": [
+                        0.0,
+                        0.0,
+                        6.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 180
+                },
+                "down": {
+                    "uv": [
+                        0.0,
+                        0.0,
+                        6.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "from": [
+                -2.0,
+                16.6997,
+                12.537
+            ],
+            "to": [
+                4.0,
+                17.6997,
+                20.537
+            ],
+            "rotation": {
+                "x": -23.2109,
+                "y": -13.8345,
+                "z": 5.8546,
+                "origin": [
+                    19.0,
+                    10.0,
+                    15.0
+                ]
+            },
+            "faces": {
+                "north": {
+                    "uv": [
+                        0.0,
+                        7.0,
+                        6.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 180
+                },
+                "south": {
+                    "uv": [
+                        0.0,
+                        7.0,
+                        6.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book"
+                },
+                "east": {
+                    "uv": [
+                        6.0,
+                        0.0,
+                        7.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 90
+                },
+                "west": {
+                    "uv": [
+                        6.0,
+                        0.0,
+                        7.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book",
+                    "rotation": 90
+                },
+                "up": {
+                    "uv": [
+                        0.0,
+                        0.0,
+                        6.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book"
+                },
+                "down": {
+                    "uv": [
+                        0.0,
+                        0.0,
+                        6.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table_book"
+                }
+            }
+        },
+        {
+            "from": [
+                1.0,
+                0.0,
+                1.0
+            ],
+            "to": [
+                4.0,
+                10.0,
+                4.0
+            ],
+            "faces": {
+                "north": {
+                    "uv": [
+                        12.0,
+                        6.0,
+                        15.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "south": {
+                    "uv": [
+                        12.0,
+                        6.0,
+                        15.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "east": {
+                    "uv": [
+                        12.0,
+                        6.0,
+                        15.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "west": {
+                    "uv": [
+                        12.0,
+                        6.0,
+                        15.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "down": {
+                    "uv": [
+                        12.0,
+                        12.0,
+                        15.0,
+                        15.0
+                    ],
+                    "texture": "#carving_table_side"
+                }
+            }
+        },
+        {
+            "from": [
+                28.0,
+                0.0,
+                1.0
+            ],
+            "to": [
+                31.0,
+                10.0,
+                4.0
+            ],
+            "faces": {
+                "north": {
+                    "uv": [
+                        12.0,
+                        6.0,
+                        15.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "south": {
+                    "uv": [
+                        1.0,
+                        6.0,
+                        4.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "east": {
+                    "uv": [
+                        1.0,
+                        6.0,
+                        4.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "west": {
+                    "uv": [
+                        1.0,
+                        6.0,
+                        4.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "down": {
+                    "uv": [
+                        1.0,
+                        12.0,
+                        4.0,
+                        15.0
+                    ],
+                    "texture": "#carving_table_side"
+                }
+            }
+        },
+        {
+            "from": [
+                1.0,
+                0.0,
+                12.0
+            ],
+            "to": [
+                4.0,
+                10.0,
+                15.0
+            ],
+            "faces": {
+                "north": {
+                    "uv": [
+                        1.0,
+                        6.0,
+                        4.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "south": {
+                    "uv": [
+                        1.0,
+                        6.0,
+                        4.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "east": {
+                    "uv": [
+                        1.0,
+                        6.0,
+                        4.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "west": {
+                    "uv": [
+                        1.0,
+                        6.0,
+                        4.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "down": {
+                    "uv": [
+                        1.0,
+                        12.0,
+                        4.0,
+                        15.0
+                    ],
+                    "texture": "#carving_table_side"
+                }
+            }
+        },
+        {
+            "from": [
+                28.0,
+                0.0,
+                12.0
+            ],
+            "to": [
+                31.0,
+                10.0,
+                15.0
+            ],
+            "faces": {
+                "north": {
+                    "uv": [
+                        12.0,
+                        6.0,
+                        15.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "south": {
+                    "uv": [
+                        12.0,
+                        6.0,
+                        15.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "east": {
+                    "uv": [
+                        12.0,
+                        6.0,
+                        15.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "west": {
+                    "uv": [
+                        12.0,
+                        6.0,
+                        15.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_side"
+                },
+                "down": {
+                    "uv": [
+                        12.0,
+                        12.0,
+                        15.0,
+                        15.0
+                    ],
+                    "texture": "#carving_table_side"
+                }
+            }
+        },
+        {
+            "from": [
+                0.0,
+                10.0,
+                0.0
+            ],
+            "to": [
+                32.0,
+                14.0,
+                16.0
+            ],
+            "faces": {
+                "north": {
+                    "uv": [
+                        0.0,
+                        9.0,
+                        16.0,
+                        11.0
+                    ],
+                    "texture": "#carving_table"
+                },
+                "south": {
+                    "uv": [
+                        0.0,
+                        9.0,
+                        16.0,
+                        11.0
+                    ],
+                    "texture": "#carving_table"
+                },
+                "east": {
+                    "uv": [
+                        0.0,
+                        0.0,
+                        16.0,
+                        4.0
+                    ],
+                    "texture": "#carving_table_top"
+                },
+                "west": {
+                    "uv": [
+                        0.0,
+                        0.0,
+                        16.0,
+                        4.0
+                    ],
+                    "texture": "#carving_table_top"
+                },
+                "up": {
+                    "uv": [
+                        0.0,
+                        0.0,
+                        16.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table"
+                },
+                "down": {
+                    "uv": [
+                        0.0,
+                        0.0,
+                        16.0,
+                        8.0
+                    ],
+                    "texture": "#carving_table"
+                }
+            }
+        },
+        {
+            "from": [
+                27.87,
+                15.5911,
+                13.0
+            ],
+            "to": [
+                31.87,
+                23.5911,
+                13.0
+            ],
+            "rotation": {
+                "angle": -22.5,
+                "axis": "z",
+                "origin": [
+                    29.0919,
+                    17.3098,
+                    12.75
+                ]
+            },
+            "faces": {
+                "north": {
+                    "uv": [
+                        0.0,
+                        0.0,
+                        8.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_ink"
+                },
+                "south": {
+                    "uv": [
+                        8.0,
+                        0.0,
+                        0.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_ink"
+                }
+            }
+        },
+        {
+            "from": [
+                27.0,
+                14.0,
+                11.0
+            ],
+            "to": [
+                30.0,
+                17.0,
+                14.0
+            ],
+            "rotation": {
+                "angle": 22.5,
+                "axis": "y",
+                "origin": [
+                    29.0919,
+                    17.3098,
+                    12.75
+                ]
+            },
+            "faces": {
+                "north": {
+                    "uv": [
+                        16.0,
+                        13.0,
+                        13.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_ink",
+                    "rotation": 180
+                },
+                "south": {
+                    "uv": [
+                        13.0,
+                        13.0,
+                        16.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_ink",
+                    "rotation": 180
+                },
+                "east": {
+                    "uv": [
+                        13.0,
+                        13.0,
+                        16.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_ink",
+                    "rotation": 180
+                },
+                "west": {
+                    "uv": [
+                        13.0,
+                        13.0,
+                        16.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_ink",
+                    "rotation": 180
+                },
+                "up": {
+                    "uv": [
+                        13.0,
+                        6.0,
+                        16.0,
+                        9.0
+                    ],
+                    "texture": "#carving_table_ink"
+                },
+                "down": {
+                    "uv": [
+                        13.0,
+                        13.0,
+                        16.0,
+                        16.0
+                    ],
+                    "texture": "#carving_table_ink"
+                }
+            }
+        },
+        {
+            "from": [
+                1.0,
+                14.0,
+                2.0
+            ],
+            "to": [
+                32.0,
+                14.001,
+                18.0
+            ],
+            "rotation": {
+                "angle": 175.0,
+                "axis": "y",
+                "origin": [
+                    16.0,
+                    14.0,
+                    9.0
+                ]
+            },
+            "faces": {
+                "north": {
+                    "uv": [
+                        0.0,
+                        2.0,
+                        15.5,
+                        2.0
+                    ],
+                    "texture": "#carving_table_cloth"
+                },
+                "south": {
+                    "uv": [
+                        0.0,
+                        2.0,
+                        15.5,
+                        2.0
+                    ],
+                    "texture": "#carving_table_cloth"
+                },
+                "east": {
+                    "uv": [
+                        0.0,
+                        2.0,
+                        15.5,
+                        2.0
+                    ],
+                    "texture": "#carving_table_cloth"
+                },
+                "west": {
+                    "uv": [
+                        0.0,
+                        2.0,
+                        15.5,
+                        2.0
+                    ],
+                    "texture": "#carving_table_cloth"
+                },
+                "up": {
+                    "uv": [
+                        0.0,
+                        0.0,
+                        15.5,
+                        16.0
+                    ],
+                    "texture": "#carving_table_cloth"
+                },
+                "down": {
+                    "uv": [
+                        0.0,
+                        0.0,
+                        15.5,
+                        16.0
+                    ],
+                    "texture": "#carving_table_cloth"
+                }
+            }
+        },
+        {
+            "from": [
+                20.0,
+                14.0,
+                12.0
+            ],
+            "to": [
+                24.0,
+                15.0,
+                16.0
+            ],
+            "rotation": {
+                "angle": -32.5,
+                "axis": "y",
+                "origin": [
+                    22.0,
+                    14.0,
+                    14.0
+                ]
+            },
+            "faces": {
+                "north": {
+                    "uv": [
+                        13.0,
+                        3.0,
+                        15.0,
+                        3.5
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "south": {
+                    "uv": [
+                        2.0,
+                        5.5,
+                        4.0,
+                        6.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "east": {
+                    "uv": [
+                        0.0,
+                        5.5,
+                        2.0,
+                        6.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "west": {
+                    "uv": [
+                        4.0,
+                        5.5,
+                        6.0,
+                        6.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "up": {
+                    "uv": [
+                        3.0,
+                        3.0,
+                        5.0,
+                        5.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "down": {
+                    "uv": [
+                        5.0,
+                        3.0,
+                        7.0,
+                        5.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                }
+            }
+        },
+        {
+            "from": [
+                19.0,
+                14.6,
+                11.0
+            ],
+            "to": [
+                25.0,
+                19.6,
+                17.0
+            ],
+            "rotation": {
+                "angle": -32.5,
+                "axis": "y",
+                "origin": [
+                    22.0,
+                    14.6,
+                    14.0
+                ]
+            },
+            "faces": {
+                "north": {
+                    "uv": [
+                        6.0,
+                        0.0,
+                        9.0,
+                        2.5
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "south": {
+                    "uv": [
+                        12.0,
+                        0.0,
+                        15.0,
+                        2.5
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "east": {
+                    "uv": [
+                        9.0,
+                        0.0,
+                        12.0,
+                        2.5
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "west": {
+                    "uv": [
+                        0.0,
+                        3.0,
+                        3.0,
+                        5.5
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "up": {
+                    "uv": [
+                        0.0,
+                        0.0,
+                        3.0,
+                        3.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "down": {
+                    "uv": [
+                        3.0,
+                        0.0,
+                        6.0,
+                        3.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                }
+            }
+        },
+        {
+            "from": [
+                20.0,
+                19.2,
+                12.0
+            ],
+            "to": [
+                24.0,
+                20.2,
+                16.0
+            ],
+            "rotation": {
+                "angle": -32.5,
+                "axis": "y",
+                "origin": [
+                    22.0,
+                    19.2,
+                    14.0
+                ]
+            },
+            "faces": {
+                "north": {
+                    "uv": [
+                        6.0,
+                        5.5,
+                        8.0,
+                        6.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "south": {
+                    "uv": [
+                        10.0,
+                        5.5,
+                        12.0,
+                        6.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "east": {
+                    "uv": [
+                        8.0,
+                        5.5,
+                        10.0,
+                        6.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "west": {
+                    "uv": [
+                        12.0,
+                        5.5,
+                        14.0,
+                        6.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "up": {
+                    "uv": [
+                        7.0,
+                        3.0,
+                        9.0,
+                        5.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "down": {
+                    "uv": [
+                        9.0,
+                        3.0,
+                        11.0,
+                        5.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                }
+            }
+        },
+        {
+            "from": [
+                21.5,
+                19.6,
+                13.5
+            ],
+            "to": [
+                22.5,
+                20.6,
+                14.5
+            ],
+            "rotation": {
+                "angle": -32.5,
+                "axis": "y",
+                "origin": [
+                    22.0,
+                    19.6,
+                    14.0
+                ]
+            },
+            "faces": {
+                "north": {
+                    "uv": [
+                        14.0,
+                        5.5,
+                        14.5,
+                        6.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "south": {
+                    "uv": [
+                        15.0,
+                        5.5,
+                        15.5,
+                        6.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "east": {
+                    "uv": [
+                        14.5,
+                        5.5,
+                        15.0,
+                        6.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "west": {
+                    "uv": [
+                        15.5,
+                        5.5,
+                        16.0,
+                        6.0
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "up": {
+                    "uv": [
+                        0.0,
+                        6.0,
+                        0.5,
+                        6.5
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "down": {
+                    "uv": [
+                        0.5,
+                        6.0,
+                        1.0,
+                        6.5
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                }
+            }
+        },
+        {
+            "from": [
+                21.5,
+                20.4,
+                13.5
+            ],
+            "to": [
+                22.5,
+                21.9,
+                14.5
+            ],
+            "rotation": {
+                "x": -13.7012,
+                "y": -29.7621,
+                "z": 26.157,
+                "origin": [
+                    22.0,
+                    20.4,
+                    14.0
+                ]
+            },
+            "faces": {
+                "north": {
+                    "uv": [
+                        11.0,
+                        3.0,
+                        11.5,
+                        3.75
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "south": {
+                    "uv": [
+                        12.0,
+                        3.0,
+                        12.5,
+                        3.75
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "east": {
+                    "uv": [
+                        11.5,
+                        3.0,
+                        12.0,
+                        3.75
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "west": {
+                    "uv": [
+                        12.5,
+                        3.0,
+                        13.0,
+                        3.75
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "up": {
+                    "uv": [
+                        1.0,
+                        6.0,
+                        1.5,
+                        6.5
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                },
+                "down": {
+                    "uv": [
+                        1.5,
+                        6.0,
+                        2.0,
+                        6.5
+                    ],
+                    "texture": "#mini_yellow_pumpkin"
+                }
+            }
+        }
+    ]
+}

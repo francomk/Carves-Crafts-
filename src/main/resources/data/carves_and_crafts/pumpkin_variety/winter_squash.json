@@ -1,0 +1,16 @@
+{
+  "variants": [
+    {
+      "model": "butternut_squash",
+      "weight": 40
+    },
+    {
+      "model": "kabocha_squash",
+      "weight": 40
+    },
+    {
+      "model": "turban_squash",
+      "weight": 20
+    }
+  ]
+}

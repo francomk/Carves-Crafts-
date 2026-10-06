@@ -1,0 +1,16 @@
+{
+  "variants": [
+    {
+      "model": "white_pumpkin",
+      "weight": 40
+    },
+    {
+      "model": "blue_pumpkin",
+      "weight": 35
+    },
+    {
+      "model": "cinderella_pumpkin",
+      "weight": 25
+    }
+  ]
+}
