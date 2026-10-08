@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.4 — inventory ban fix
+
+- Carved pumpkin items no longer send their design to clients: only an 18-byte reference to it. An
+  inventory, a chest or a shulker box full of large designs can no longer disconnect players. Pumpkins
+  inside block entities (shelves, campfires...) are sent the same way.
+- The bench sends the design of the pumpkin it holds, so the editor works as before.
+- Creative inventory: items sent back by the client get their design back from the server. An item whose
+  design the server no longer knows (e.g. from a saved hotbar, much later) is refused.
+- New server option `maxColorsPerDesign` and admin command `/carves maxcolors [off|1-254]`, off by
+  default: caps the colors of new designs (carved, imported or copied). Existing pumpkins and schematics
+  are kept; a pumpkin already over the limit can be edited without adding colors. The editor shows a
+  color counter and blocks confirming over the limit.
+
 ## 1.0.3 — security fixes
 
 - Placed pumpkins now send only their design's hash in chunk data; clients fetch the designs they draw

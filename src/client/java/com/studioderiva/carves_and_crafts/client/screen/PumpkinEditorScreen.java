@@ -3,6 +3,7 @@ package com.studioderiva.carves_and_crafts.client.screen;
 import com.studioderiva.carves_and_crafts.client.render.PumpkinAtlas;
 import com.studioderiva.carves_and_crafts.design.CanvasFace;
 import com.studioderiva.carves_and_crafts.design.CanvasLayout;
+import com.studioderiva.carves_and_crafts.client.render.ClientDesigns;
 import com.studioderiva.carves_and_crafts.design.DesignCodec;
 import com.studioderiva.carves_and_crafts.design.DesignEditRules;
 import com.studioderiva.carves_and_crafts.design.EditorSession;
@@ -109,7 +110,7 @@ public class PumpkinEditorScreen extends Screen {
 		this.parent = parent;
 		this.menu = menu;
 		EncodedDesign encoded = menu.getPumpkin().get(ModComponents.DESIGN);
-		PumpkinDesign original = encoded != null ? encoded.decode() : null;
+		PumpkinDesign original = encoded != null ? Objects.requireNonNull(ClientDesigns.of(encoded), "editor opened before the design arrived") : null;
 		this.originalHash = encoded != null ? encoded.hash() : "";
 		this.model = Objects.requireNonNull(PumpkinModels.of(menu.getPumpkin()), "editor opened without a pumpkin");
 		this.session = new EditorSession(original);
@@ -215,7 +216,7 @@ public class PumpkinEditorScreen extends Screen {
 		mirrorButton.active = editing;
 		undoButton.active = editing && session.canUndo();
 		redoButton.active = editing && session.canRedo();
-		confirmButton.active = editing && session.isDirty() && affordable();
+		confirmButton.active = editing && session.isDirty() && affordable() && withinColorLimit();
 		saveSchematicButton.setMessage(Component.translatable(saveSchematic ? "gui.carves_and_crafts.editor.save_on" : "gui.carves_and_crafts.editor.save_off"));
 		saveSchematicButton.active = editing;
 		for (Button b : densityButtons) {
@@ -340,11 +341,17 @@ public class PumpkinEditorScreen extends Screen {
 		}
 	}
 
-	/** Knife and brush usage of the pending edit against what the bench holds. */
+	/** Knife and brush usage of the pending edit against what the bench holds, and the server's color limit. */
 	private void renderCost(GuiGraphics graphics) {
 		DesignEditRules.Cost cost = cost();
 		int y = height - BOTTOM_H + 6;
 		int x = LEFT_W + 6;
+		int maxColors = menu.maxColors();
+		if (maxColors > 0) {
+			// top of the color panel: the bottom bar is already full with narrow windows
+			graphics.drawString(font, Component.translatable("gui.carves_and_crafts.editor.colors", colorCount(), maxColors),
+				width - RIGHT_W + 6, (TOP_H - font.lineHeight) / 2, withinColorLimit() ? TEXT : WARN);
+		}
 		if (creative()) {
 			graphics.drawString(font, Component.translatable("gui.carves_and_crafts.editor.creative"), x, y + 5, TEXT_DIM);
 			return;
@@ -374,6 +381,22 @@ public class PumpkinEditorScreen extends Screen {
 	private int paintLeft() {
 		ItemStack brush = menu.getBrush();
 		return brush.is(ModItems.PAINTBRUSH) ? PaintbrushItem.charge(brush) : 0;
+	}
+
+	private int colorCount() {
+		PumpkinDesign working = session.working();
+		return working == null ? 0 : DesignCodec.colorCount(working);
+	}
+
+	/** Same rule as the server: at most the server's max colors, or the colors the pumpkin already had. */
+	private boolean withinColorLimit() {
+		int maxColors = menu.maxColors();
+		if (maxColors == 0) {
+			return true;
+		}
+		PumpkinDesign original = session.original();
+		int allowed = Math.max(maxColors, original == null ? 0 : DesignCodec.colorCount(original));
+		return colorCount() <= allowed;
 	}
 
 	/** Same check the server does; the server stays authoritative. */

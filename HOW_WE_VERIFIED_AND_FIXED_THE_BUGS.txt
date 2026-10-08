@@ -353,7 +353,10 @@ defect, unless it says so; all of it is something nobody has watched happen.
     decompression limits of the 1.21.11 protocol were not measured; the fix
     removes the cause without needing them.
 
-  * Items are still a risk (2.2, PARTLY CLOSED).
+  * Items are still a risk (2.2, PARTLY CLOSED). [Closed after 1.0.3: items
+    now send a reference instead of the design; see the CHANGELOG. Checked on
+    a dedicated server with an inventory of 27 shulker boxes holding about
+    24 MiB of different designs, sent in one packet.]
 
   * The outbound budget (4 MiB burst, 1 MiB/s) and the 4 MiB library cap were
     chosen, not measured. Nobody has timed how a crowded area of large designs

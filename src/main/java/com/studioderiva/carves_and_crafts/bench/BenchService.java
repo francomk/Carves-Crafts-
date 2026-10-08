@@ -87,6 +87,11 @@ public final class BenchService {
 		if (result.changedPixels() == 0) {
 			return;
 		}
+		// a pumpkin already over the limit (carved before it was set) may still be edited without adding colors
+		int allowedColors = original == null ? 0 : DesignCodec.colorCount(original);
+		if (!withinColorLimit(player, edited, allowedColors)) {
+			return;
+		}
 		if (!payTools(player, menu, DesignEditRules.cost(original, edited))) {
 			return;
 		}
@@ -235,7 +240,7 @@ public final class BenchService {
 				player.displayClientMessage(Component.translatable("message.carves_and_crafts.carving_bench.unknown_model", payload.model()), true);
 			} else if (design == null || !model.fits(design.decode())) {
 				reject(player, "invalid");
-			} else {
+			} else if (withinColorLimit(player, design.decode(), 0)) {
 				addSchematic(player, payload.name(), model, design, payload.authors().asFromFile());
 			}
 		}
@@ -267,6 +272,9 @@ public final class BenchService {
 		}
 		if (!model.fits(design)) {
 			reject(player, "invalid");
+			return;
+		}
+		if (!withinColorLimit(player, design, 0)) {
 			return;
 		}
 		if (!payTools(player, menu, DesignEditRules.cost(null, design))) {
@@ -347,6 +355,25 @@ public final class BenchService {
 	}
 
 	// ------------------------------------------------------------------ helpers
+
+	/**
+	 * Server option maxColorsPerDesign (off by default).
+	 *
+	 * @param alreadyAllowed colors the design may keep anyway (those of the pumpkin being edited)
+	 * @return false, telling the player, if the design has too many colors
+	 */
+	private static boolean withinColorLimit(ServerPlayer player, PumpkinDesign design, int alreadyAllowed) {
+		int limit = ServerConfig.get().colorLimit();
+		if (limit == 0) {
+			return true;
+		}
+		int colors = DesignCodec.colorCount(design);
+		if (colors <= Math.max(limit, alreadyAllowed)) {
+			return true;
+		}
+		player.displayClientMessage(Component.translatable("message.carves_and_crafts.carving_bench.too_many_colors", colors, limit), true);
+		return false;
+	}
 
 	private static @Nullable CarvingBenchMenu openMenu(ServerPlayer player, int containerId) {
 		if (player.containerMenu instanceof CarvingBenchMenu menu && menu.containerId == containerId && menu.stillValid(player)) {

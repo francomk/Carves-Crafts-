@@ -25,6 +25,19 @@ public final class ServerConfig {
 	public int schematicActionsPerMinute = 0;
 	/** Whether players may import .pumpkin files from their computer into their library. */
 	public boolean allowSchematicImport = true;
+	/**
+	 * Max distinct colors in a new design (carved, imported or copied onto a pumpkin), 1 to {@link #MAX_COLORS_LIMIT};
+	 * 0 = no limit. Keeps every design small. Existing pumpkins and schematics are left as they are.
+	 * Set in game with /carves maxcolors.
+	 */
+	public int maxColorsPerDesign = 0;
+
+	public static final int MAX_COLORS_LIMIT = 254;
+
+	/** Clamped because the file can be edited by hand: past 254 colors designs switch to two-byte indices. */
+	public int colorLimit() {
+		return maxColorsPerDesign > 0 ? Math.min(maxColorsPerDesign, MAX_COLORS_LIMIT) : 0;
+	}
 
 	public static ServerConfig get() {
 		return instance;

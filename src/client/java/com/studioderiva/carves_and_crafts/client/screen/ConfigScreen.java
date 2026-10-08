@@ -27,6 +27,7 @@ public class ConfigScreen extends Screen {
 	private int maxSchematics;
 	private int actionsPerMinute;
 	private boolean allowImport;
+	private int maxColors;
 
 	public ConfigScreen(Screen parent) {
 		super(Component.translatable("config.carves_and_crafts.title"));
@@ -36,6 +37,7 @@ public class ConfigScreen extends Screen {
 		maxSchematics = server.maxSchematicsPerPlayer;
 		actionsPerMinute = server.schematicActionsPerMinute;
 		allowImport = server.allowSchematicImport;
+		maxColors = server.maxColorsPerDesign;
 	}
 
 	/** Server options are editable only where this game owns them: no world open, or single player. */
@@ -74,6 +76,8 @@ public class ConfigScreen extends Screen {
 			addRenderableWidget(CycleButton.onOffBuilder(allowImport)
 				.create(x, y, WIDTH, 20, Component.translatable("config.carves_and_crafts.allow_import"), (button, value) -> allowImport = value))
 				.setTooltip(Tooltip.create(Component.translatable("config.carves_and_crafts.allow_import.tip")));
+			y += 24;
+			numberBox(x, y, "config.carves_and_crafts.max_colors", maxColors, v -> maxColors = v);
 		}
 
 		addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose())
@@ -100,6 +104,7 @@ public class ConfigScreen extends Screen {
 			graphics.drawString(font, Component.translatable("config.carves_and_crafts.server"), x, 76, 0xFFA0A0A0);
 			graphics.drawString(font, Component.translatable("config.carves_and_crafts.max_schematics"), x, 88, 0xFFFFFFFF);
 			graphics.drawString(font, Component.translatable("config.carves_and_crafts.actions_per_minute"), x, 124, 0xFFFFFFFF);
+			graphics.drawString(font, Component.translatable("config.carves_and_crafts.max_colors"), x, 176, 0xFFFFFFFF);
 		} else {
 			graphics.drawWordWrap(font, Component.translatable("config.carves_and_crafts.server_remote"), x, 88, WIDTH, 0xFFA0A0A0, false);
 		}
@@ -114,6 +119,7 @@ public class ConfigScreen extends Screen {
 			server.maxSchematicsPerPlayer = maxSchematics;
 			server.schematicActionsPerMinute = actionsPerMinute;
 			server.allowSchematicImport = allowImport;
+			server.maxColorsPerDesign = Math.min(maxColors, ServerConfig.MAX_COLORS_LIMIT);
 			ServerConfig.save();
 		}
 		minecraft.setScreen(parent);

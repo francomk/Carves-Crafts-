@@ -10,13 +10,16 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.util.ExtraCodecs;
 
 public final class ModComponents {
-	/** Design carried by a pumpkin item, stored inline so the pumpkin is self-contained (works across worlds). */
+	/**
+	 * Design carried by a pumpkin item, stored inline so the pumpkin is self-contained (works across worlds).
+	 * Clients only receive a reference to it (see EncodedDesign).
+	 */
 	public static final DataComponentType<EncodedDesign> DESIGN = Registry.register(
 		BuiltInRegistries.DATA_COMPONENT_TYPE,
 		CarvesAndCrafts.id("design"),
 		DataComponentType.<EncodedDesign>builder()
-			.persistent(EncodedDesign.CODEC)
-			.networkSynchronized(EncodedDesign.STREAM_CODEC)
+			.persistent(EncodedDesign.ITEM_CODEC)
+			.networkSynchronized(EncodedDesign.ITEM_STREAM_CODEC)
 			.build()
 	);
 

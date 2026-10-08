@@ -45,6 +45,19 @@ public final class ClientDesigns {
 		return null;
 	}
 
+	/** The design with this hash if it is already here; never requests it. */
+	public static @Nullable PumpkinDesign peek(String hash) {
+		return designs.get(hash);
+	}
+
+	/**
+	 * The full design of an item's design component: decoded if complete, else from the designs received so far
+	 * (the server sends the design of the pumpkin in an open carving bench). Null while it is on its way.
+	 */
+	public static @Nullable PumpkinDesign of(EncodedDesign encoded) {
+		return encoded.isComplete() ? encoded.decode() : designs.get(encoded.hash());
+	}
+
 	public static void receive(EncodedDesign encoded) {
 		String hash = encoded.hash();
 		requestedAt.remove(hash);

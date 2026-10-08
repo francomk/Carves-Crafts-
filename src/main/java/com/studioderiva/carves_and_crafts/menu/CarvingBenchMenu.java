@@ -2,8 +2,13 @@ package com.studioderiva.carves_and_crafts.menu;
 
 import com.studioderiva.carves_and_crafts.block.entity.BenchSlots;
 import com.studioderiva.carves_and_crafts.block.entity.CarvingBenchBlockEntity;
+import com.studioderiva.carves_and_crafts.config.ServerConfig;
+import com.studioderiva.carves_and_crafts.design.EncodedDesign;
 import com.studioderiva.carves_and_crafts.item.PaintbrushItem;
 import com.studioderiva.carves_and_crafts.item.ToolBalance;
+import com.studioderiva.carves_and_crafts.network.DesignDataPayload;
+import com.studioderiva.carves_and_crafts.network.OutboundBudget;
+import com.studioderiva.carves_and_crafts.registry.ModComponents;
 import com.studioderiva.carves_and_crafts.registry.ModItems;
 import com.studioderiva.carves_and_crafts.registry.ModMenus;
 import net.minecraft.world.Container;
@@ -15,6 +20,8 @@ import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.ResultContainer;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.server.level.ServerPlayer;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -40,6 +47,11 @@ public class CarvingBenchMenu extends AbstractContainerMenu {
 	private final Container container;
 	private final ResultContainer result = new ResultContainer();
 	private final DataSlot tab = DataSlot.standalone();
+	/** Server's max colors per design (0 = no limit), shown in the editor. */
+	private final DataSlot maxColors = DataSlot.standalone();
+	private final Player player;
+	/** Server side: hash of the pumpkin design last sent to the client, which only holds a reference to it. */
+	private @Nullable String sentDesignHash;
 	/** Server side only. */
 	private final @Nullable CarvingBenchBlockEntity bench;
 
@@ -57,7 +69,9 @@ public class CarvingBenchMenu extends AbstractContainerMenu {
 		super(ModMenus.CARVING_BENCH, containerId);
 		this.container = container;
 		this.bench = bench;
+		this.player = inventory.player;
 		addDataSlot(tab);
+		addDataSlot(maxColors);
 
 		// carve tab
 		addSlot(new BenchSlot(container, BenchSlots.PUMPKIN, 80, 35, TAB_CARVE));
@@ -89,6 +103,10 @@ public class CarvingBenchMenu extends AbstractContainerMenu {
 
 	public int tab() {
 		return tab.get();
+	}
+
+	public int maxColors() {
+		return maxColors.get();
 	}
 
 	public ItemStack getPumpkin() {
@@ -164,7 +182,30 @@ public class CarvingBenchMenu extends AbstractContainerMenu {
 		if (!ItemStack.matches(preview, result.getItem(0))) {
 			result.setItem(0, preview);
 		}
+		if (bench != null) {
+			maxColors.set(ServerConfig.get().colorLimit());
+		}
 		super.broadcastChanges();
+		if (player instanceof ServerPlayer serverPlayer) {
+			sendPumpkinDesign(serverPlayer);
+		}
+	}
+
+	/**
+	 * The editor needs the full design of the pumpkin in the bench, and the client's copy of the item only holds a
+	 * reference. Sent once per design, within the player's send budget (retried on the next sync if over it).
+	 */
+	private void sendPumpkinDesign(ServerPlayer serverPlayer) {
+		EncodedDesign design = getPumpkin().get(ModComponents.DESIGN);
+		if (design == null || !design.isComplete()) {
+			sentDesignHash = null;
+			return;
+		}
+		if (design.hash().equals(sentDesignHash) || !OutboundBudget.tryConsume(serverPlayer, design.size())) {
+			return;
+		}
+		sentDesignHash = design.hash();
+		ServerPlayNetworking.send(serverPlayer, new DesignDataPayload(design));
 	}
 
 	@Override

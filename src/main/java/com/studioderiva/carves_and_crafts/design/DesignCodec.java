@@ -175,6 +175,11 @@ public final class DesignCodec {
 		return hash(encode(design));
 	}
 
+	/** Distinct colors the design actually uses (unused palette entries don't count). */
+	public static int colorCount(PumpkinDesign design) {
+		return buildCanonicalPalette(design, new int[design.paletteSize() + 1]).length;
+	}
+
 	// --- encoding helpers ---
 
 	/**

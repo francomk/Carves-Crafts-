@@ -184,6 +184,15 @@ public class CustomPumpkinBlockEntity extends BlockEntity {
 	protected void applyImplicitComponents(DataComponentGetter components) {
 		super.applyImplicitComponents(components);
 		EncodedDesign encoded = components.get(ModComponents.DESIGN);
+		if (encoded != null && !encoded.isComplete()) {
+			// client-side placement from an item that only holds a reference; the server sends the real state
+			design = null;
+			this.encoded = null;
+			syncedHash = encoded.hash();
+			authors = components.getOrDefault(ModComponents.AUTHORS, AuthorList.EMPTY);
+			revision++;
+			return;
+		}
 		try {
 			design = encoded == null ? null : encoded.decode();
 			this.encoded = encoded;

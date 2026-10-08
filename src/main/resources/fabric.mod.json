@@ -30,6 +30,9 @@
 			"com.studioderiva.carves_and_crafts.client.compat.JadePlugin"
 		]
 	},
+	"mixins": [
+		"carves_and_crafts.mixins.json"
+	],
 	"depends": {
 		"fabricloader": ">=0.19.5",
 		"minecraft": "~1.21.11",

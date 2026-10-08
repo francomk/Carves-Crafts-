@@ -1,5 +1,10 @@
 package com.studioderiva.carves_and_crafts.client.dev;
 
+import com.studioderiva.carves_and_crafts.client.render.ClientDesigns;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket;
+import net.minecraft.world.entity.player.Inventory;
 import com.studioderiva.carves_and_crafts.CarvesAndCrafts;
 import com.studioderiva.carves_and_crafts.block.CustomPumpkinBlock;
 import com.studioderiva.carves_and_crafts.block.AttachedPumpkinStemBlock;
@@ -133,6 +138,8 @@ public final class DevScenarios {
 			case "compat" -> compatScenario();
 			case "bench_model" -> benchModelScenario();
 			case "bench_parts" -> benchPartsScenario();
+			case "items" -> itemsScenario();
+			case "colors" -> colorsScenario();
 			default -> {
 				return;
 			}
@@ -924,11 +931,35 @@ public final class DevScenarios {
 		}));
 		steps.add(new Step(40, mc -> {
 			EncodedDesign large = EncodedDesign.of(DevServerScenario.largeDesign());
-			expect(large.equals(menu(mc).getPumpkin().get(ModComponents.DESIGN)), "client sees the confirmed large design");
+			EncodedDesign held = menu(mc).getPumpkin().get(ModComponents.DESIGN);
+			expect(large.equals(held), "client sees the confirmed large design");
+			expect(held != null && !held.isComplete(), "client item holds only a design reference");
+			expect(held != null && large.decode().equals(ClientDesigns.of(held)), "bench sent the full design for the editor");
 			PumpkinFile file = new PumpkinFile(DevServerScenario.IMPORT_NAME, 0, "classic_pumpkin", large, AuthorList.EMPTY);
 			ClientPlayNetworking.send(ImportSchematicPayload.of(menu(mc).containerId, DevServerScenario.IMPORT_NAME, file, 0));
 		}));
-		steps.add(new Step(100, mc -> {
+		// the server fills the inventory once it has checked the confirm and the import
+		steps.add(new Step(200, mc -> mc.setScreen(null)));
+		steps.add(new Step(20, mc -> {
+			Inventory inventory = mc.player.getInventory();
+			int shulkers = 0;
+			for (int i = 0; i < DevServerScenario.SHULKERS; i++) {
+				shulkers += inventory.getItem(DevServerScenario.FIRST_SHULKER_SLOT + i).is(Items.SHULKER_BOX) ? 1 : 0;
+			}
+			expect(shulkers == DevServerScenario.SHULKERS, "inventory of shulker boxes full of large designs received (" + shulkers + ")");
+			ItemStack probe = inventory.getItem(DevServerScenario.PROBE_SLOT).copy();
+			expect(probe.has(ModComponents.DESIGN), "probe pumpkin received");
+			// what the creative inventory sends when moving an item: the new slot, then the emptied one (menu slots 36+)
+			mc.getConnection().send(new ServerboundSetCreativeModeSlotPacket(36 + DevServerScenario.MOVED_SLOT, probe));
+			mc.getConnection().send(new ServerboundSetCreativeModeSlotPacket(36 + DevServerScenario.PROBE_SLOT, ItemStack.EMPTY));
+			// a pumpkin with a design reference the server never sent
+			ByteBuf fake = Unpooled.buffer();
+			fake.writeByte(18).writeByte('D').writeByte('R').writeBytes(new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
+			ItemStack forged = new ItemStack(ModItems.CLASSIC_PUMPKIN);
+			forged.set(ModComponents.DESIGN, EncodedDesign.ITEM_STREAM_CODEC.decode(fake));
+			mc.getConnection().send(new ServerboundSetCreativeModeSlotPacket(36 + DevServerScenario.FAKE_SLOT, forged));
+		}));
+		steps.add(new Step(300, mc -> {
 		}));
 	}
 
@@ -978,6 +1009,74 @@ public final class DevScenarios {
 		}));
 		steps.add(new Step(30, mc -> shot(mc, FabricLoader.getInstance().isModLoaded("wthit") ? "p11_overlay_wthit" : "p11_overlay")));
 		steps.add(new Step(5, mc -> showHud = false));
+	}
+
+	/** /carves maxcolors: the server refuses designs over the limit, the editor counts colors and blocks confirming. */
+	private static void colorsScenario() {
+		steps.add(new Step(5, mc -> runCommand(mc, "carves maxcolors 2")));
+		steps.add(new Step(5, mc -> expect(ServerConfig.get().colorLimit() == 2, "command sets the limit")));
+		openBenchWithTools(true);
+		steps.add(new Step(5, mc -> expect(menu(mc).maxColors() == 2, "bench tells the client the limit")));
+		steps.add(new Step(10, mc -> ClientPlayNetworking.send(new ConfirmDesignPayload(menu(mc).containerId, "",
+			DesignCodec.encode(paintedColors(3)), false))));
+		steps.add(new Step(5, mc -> serverBench(mc, bench -> expect(!bench.getItem(BenchSlots.PUMPKIN).has(ModComponents.DESIGN),
+			"server refuses a design with 3 colors"))));
+		steps.add(new Step(10, mc -> ClientPlayNetworking.send(new ConfirmDesignPayload(menu(mc).containerId, "",
+			DesignCodec.encode(paintedColors(2)), false))));
+		steps.add(new Step(5, mc -> serverBench(mc, bench -> expect(bench.getItem(BenchSlots.PUMPKIN).has(ModComponents.DESIGN),
+			"server accepts a design with 2 colors"))));
+		// a third color in the editor: counter in red, confirm disabled
+		steps.add(new Step(5, mc -> click(mc, button(mc, "gui.carves_and_crafts.carve"))));
+		steps.add(new Step(5, mc -> {
+			for (GuiEventListener child : mc.screen.children()) {
+				if (child instanceof EditBox box && box.isVisible()) {
+					box.setValue("#00FF00");
+				}
+			}
+			click(mc, button(mc, "gui.carves_and_crafts.tool.paint"));
+		}));
+		steps.add(new Step(5, mc -> stroke((PumpkinEditorScreen) mc.screen, 2, 12, 6, 12)));
+		steps.add(new Step(5, mc -> {
+			expect(!button(mc, "gui.carves_and_crafts.editor.confirm").active, "editor blocks confirming a third color");
+			shot(mc, "colors_editor");
+		}));
+		steps.add(new Step(5, mc -> {
+			mc.setScreen(null);
+			runCommand(mc, "carves maxcolors off");
+		}));
+		steps.add(new Step(5, mc -> expect(ServerConfig.get().colorLimit() == 0, "command turns the limit off")));
+	}
+
+	/** Classic pumpkin at x2 with the first pixels of the front painted in {@code colors} different colors. */
+	private static PumpkinDesign paintedColors(int colors) {
+		PumpkinDesign design = new PumpkinDesign(PumpkinModels.CLASSIC.layout(2));
+		for (int i = 0; i < colors; i++) {
+			design.paint(CanvasFace.NORTH, i, 0, 0x100000 * (i + 1));
+		}
+		return design;
+	}
+
+	/** The tool and seed items: held in hand, in the hotbar and in the inventory screen. */
+	private static void itemsScenario() {
+		steps.add(new Step(20, mc -> {
+			runCommand(mc, "gamemode creative @a");
+			runCommand(mc, "time set noon");
+			runCommand(mc, "clear @a");
+			String[] items = {"carving_knife", "paintbrush", "color_palette",
+					"field_pumpkin_seeds", "heirloom_pumpkin_seeds", "winter_squash_seeds"};
+			for (int i = 0; i < items.length; i++) {
+				runCommand(mc, "item replace entity @a hotbar." + i + " with carves_and_crafts:" + items[i]);
+			}
+			showHud = true;
+			mc.player.getInventory().setSelectedSlot(0);
+		}));
+		steps.add(new Step(20, mc -> shot(mc, "items_hand")));
+		steps.add(new Step(5, mc -> mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player))));
+		steps.add(new Step(10, mc -> shot(mc, "items_inventory")));
+		steps.add(new Step(5, mc -> {
+			mc.setScreen(null);
+			showHud = false;
+		}));
 	}
 
 	/** The carving bench's Blockbench model, placed facing each way, from the front, the side and above; then as an item. */

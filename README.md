@@ -88,7 +88,8 @@ are shown greyed out and refused on import.
 {
   "maxSchematicsPerPlayer": 0,     // 0 = no count limit (libraries are always capped at 4 MiB of designs)
   "schematicActionsPerMinute": 0,  // rate limit on save/rename/delete/copy/import, 0 = none
-  "allowSchematicImport": true     // let players import .pumpkin files
+  "allowSchematicImport": true,    // let players import .pumpkin files
+  "maxColorsPerDesign": 0          // max colors in a new design, 1-254, 0 = no limit (also /carves maxcolors)
 }
 ```
 
@@ -120,6 +121,7 @@ Varieties are `field_pumpkin`, `heirloom_pumpkin` and `winter_squash`.
 
 | Command | Who | What |
 |---|---|---|
+| `/carves maxcolors [off\|1-254]` | admins (level 3) | show or set the max colors per design; saved to the config, applies at once |
 | `/dpumpkin <pos> init\|cut\|erase\|paint\|fill\|demo\|info` | operators | edit or inspect the design of a placed pumpkin directly |
 
 ## Compatibility

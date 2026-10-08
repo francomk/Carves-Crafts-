@@ -1,0 +1,13 @@
+{
+	"required": true,
+	"package": "com.studioderiva.carves_and_crafts.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"BlockEntityDataPacketMixin",
+		"CreativeSlotMixin",
+		"LevelChunkBlockEntityInfoMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

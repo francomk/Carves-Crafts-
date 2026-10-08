@@ -1,10 +1,12 @@
 package com.studioderiva.carves_and_crafts.client.screen;
 
+import com.studioderiva.carves_and_crafts.client.render.ClientDesigns;
 import com.studioderiva.carves_and_crafts.client.render.PumpkinAtlas;
 import com.studioderiva.carves_and_crafts.client.schematic.LocalSchematics;
 import com.studioderiva.carves_and_crafts.client.schematic.LocalSchematics.Entry;
 import com.studioderiva.carves_and_crafts.CarvesAndCrafts;
 import com.studioderiva.carves_and_crafts.design.CanvasFace;
+import com.studioderiva.carves_and_crafts.design.EncodedDesign;
 import com.studioderiva.carves_and_crafts.design.PumpkinDesign;
 import com.studioderiva.carves_and_crafts.menu.CarvingBenchMenu;
 import com.studioderiva.carves_and_crafts.model.PumpkinModel;
@@ -347,8 +349,14 @@ public class CarvingBenchScreen extends AbstractContainerScreen<CarvingBenchMenu
 		return selectedId;
 	}
 
+	/** The pumpkin is virgin, or its full design has arrived from the server (the item only holds a reference). */
+	private boolean designReady() {
+		EncodedDesign design = menu.getPumpkin().get(ModComponents.DESIGN);
+		return design == null || ClientDesigns.of(design) != null;
+	}
+
 	private void openEditor() {
-		if (minecraft != null && PumpkinModels.of(menu.getPumpkin()) != null) {
+		if (minecraft != null && PumpkinModels.of(menu.getPumpkin()) != null && designReady()) {
 			minecraft.setScreen(new PumpkinEditorScreen(this, menu));
 		}
 	}
@@ -369,7 +377,9 @@ public class CarvingBenchScreen extends AbstractContainerScreen<CarvingBenchMenu
 		paletteTab.active = tab != CarvingBenchMenu.TAB_PALETTE;
 		schematicsTab.active = !schematics;
 		carveButton.visible = carve;
-		carveButton.active = PumpkinModels.of(menu.getPumpkin()) != null;
+		carveButton.active = PumpkinModels.of(menu.getPumpkin()) != null && designReady();
+		carveButton.setTooltip(PumpkinModels.of(menu.getPumpkin()) != null && !designReady()
+			? Tooltip.create(Component.translatable("gui.carves_and_crafts.loading_design")) : null);
 		rechargeButton.visible = carve;
 		rechargeButton.active = menu.canRecharge();
 
