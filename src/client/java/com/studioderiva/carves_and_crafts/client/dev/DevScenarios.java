@@ -104,12 +104,12 @@ public final class DevScenarios {
 	private static final int WARMUP_TICKS = 80;
 	private static final BlockPos BENCH = new BlockPos(6, 100, 3);
 
-	private record Step(int waitAfter, Consumer<Minecraft> action) {
+	record Step(int waitAfter, Consumer<Minecraft> action) {
 	}
 
-	private static final List<Step> steps = new ArrayList<>();
+	static final List<Step> steps = new ArrayList<>();
 	/** Screenshots normally hide the HUD; the compat scenario needs it for the Jade/WTHIT overlay. */
-	private static boolean showHud;
+	static boolean showHud;
 	private static int ticks;
 	private static int stepIndex;
 	private static int waitUntil;
@@ -140,6 +140,8 @@ public final class DevScenarios {
 			case "bench_parts" -> benchPartsScenario();
 			case "items" -> itemsScenario();
 			case "colors" -> colorsScenario();
+			case "gallery_build" -> GalleryScenario.build();
+			case "gallery" -> GalleryScenario.shoot();
 			default -> {
 				return;
 			}
@@ -623,7 +625,7 @@ public final class DevScenarios {
 		})));
 	}
 
-	private static void lightDirectly(ServerPlayer sp, BlockPos pos, LightSource source, Item item) {
+	static void lightDirectly(ServerPlayer sp, BlockPos pos, LightSource source, Item item) {
 		if (sp.level().getBlockEntity(pos) instanceof CustomPumpkinBlockEntity pumpkin) {
 			pumpkin.setLightItem(new ItemStack(item));
 			sp.level().setBlockAndUpdate(pos, sp.level().getBlockState(pos).setValue(CustomPumpkinBlock.LIGHT, source));
@@ -1269,23 +1271,23 @@ public final class DevScenarios {
 		}
 	}
 
-	private static CarvingBenchMenu menu(Minecraft mc) {
+	static CarvingBenchMenu menu(Minecraft mc) {
 		return (CarvingBenchMenu) mc.player.containerMenu;
 	}
 
 	// ------------------------------------------------------------------ helpers
 
-	private static void shotFrom(String name, double x, double y, double z, float yaw, float pitch) {
+	static void shotFrom(String name, double x, double y, double z, float yaw, float pitch) {
 		steps.add(new Step(25, mc -> teleport(mc, x, y, z, yaw, pitch)));
 		steps.add(new Step(5, mc -> shot(mc, name)));
 	}
 
-	private static void shot(Minecraft mc, String name) {
+	static void shot(Minecraft mc, String name) {
 		String file = name + ".png";
 		Screenshot.grab(mc.gameDirectory, file, mc.getMainRenderTarget(), 1, msg -> CarvesAndCrafts.LOGGER.info("Saved {}", file));
 	}
 
-	private static void expect(boolean condition, String what) {
+	static void expect(boolean condition, String what) {
 		if (condition) {
 			CarvesAndCrafts.LOGGER.info("SCENARIO OK: {}", what);
 		} else {
@@ -1293,12 +1295,12 @@ public final class DevScenarios {
 		}
 	}
 
-	private static AbstractWidget button(Minecraft mc, String translationKey) {
+	static AbstractWidget button(Minecraft mc, String translationKey) {
 		return buttonByText(mc, Component.translatable(translationKey).getString());
 	}
 
 	/** Finds a widget whose label is the text, ignoring a "> " selection prefix. */
-	private static AbstractWidget buttonByText(Minecraft mc, String text) {
+	static AbstractWidget buttonByText(Minecraft mc, String text) {
 		Screen screen = mc.screen;
 		for (GuiEventListener child : screen.children()) {
 			if (child instanceof AbstractWidget widget && widget.visible) {
@@ -1311,7 +1313,7 @@ public final class DevScenarios {
 		throw new IllegalStateException("No button '" + text + "' on " + screen);
 	}
 
-	private static void click(Minecraft mc, AbstractWidget widget) {
+	static void click(Minecraft mc, AbstractWidget widget) {
 		double x = widget.getX() + widget.getWidth() / 2.0;
 		double y = widget.getY() + widget.getHeight() / 2.0;
 		MouseButtonEvent event = new MouseButtonEvent(x, y, new MouseButtonInfo(GLFW.GLFW_MOUSE_BUTTON_LEFT, 0));
@@ -1329,12 +1331,12 @@ public final class DevScenarios {
 		editor.mouseReleased(new MouseButtonEvent(b[0], b[1], left));
 	}
 
-	private static void runCommand(Minecraft mc, String command) {
+	static void runCommand(Minecraft mc, String command) {
 		IntegratedServer server = mc.getSingleplayerServer();
 		server.execute(() -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), command));
 	}
 
-	private static void serverPlayer(Minecraft mc, Consumer<ServerPlayer> action) {
+	static void serverPlayer(Minecraft mc, Consumer<ServerPlayer> action) {
 		IntegratedServer server = mc.getSingleplayerServer();
 		UUID id = mc.player.getUUID();
 		server.execute(() -> {
@@ -1345,7 +1347,7 @@ public final class DevScenarios {
 		});
 	}
 
-	private static void serverBench(Minecraft mc, Consumer<CarvingBenchBlockEntity> action) {
+	static void serverBench(Minecraft mc, Consumer<CarvingBenchBlockEntity> action) {
 		serverPlayer(mc, player -> {
 			if (player.level().getBlockEntity(BENCH) instanceof CarvingBenchBlockEntity bench) {
 				action.accept(bench);
@@ -1364,7 +1366,7 @@ public final class DevScenarios {
 		return 0;
 	}
 
-	private static void teleport(Minecraft mc, double x, double y, double z, float yaw, float pitch) {
+	static void teleport(Minecraft mc, double x, double y, double z, float yaw, float pitch) {
 		mc.player.getAbilities().flying = true;
 		serverPlayer(mc, player -> {
 			player.getAbilities().mayfly = true;

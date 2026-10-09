@@ -21,6 +21,14 @@ loom {
 			// -Pscenario=bench to pick another script (see DevScenarios)
 			vmArg "-Dcarves_and_crafts.scenario=${project.findProperty('scenario') ?: 'render'}"
 		}
+		// Modrinth gallery in run/saves/gallery: -Pscenario=gallery_build, then -Pshaders for the final shots.
+		// The window is 960x540 points, 1920x1080 pixels on a Retina display.
+		gallery {
+			inherit client
+			name "Client (gallery)"
+			programArgs "--quickPlaySingleplayer", "gallery", "--width", "960", "--height", "540"
+			vmArg "-Dcarves_and_crafts.scenario=${project.findProperty('scenario') ?: 'gallery'}"
+		}
 		// joins the dev server (runServer) for scenarios that need a dedicated server, e.g. -Pscenario=large
 		remote {
 			inherit client
@@ -55,8 +63,10 @@ dependencies {
 	modCompileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 	modLocalRuntime "com.terraformersmc:modmenu:${project.modmenu_version}"
 	modCompileOnly "mezz.jei:jei-${project.minecraft_version}-fabric-api:${project.jei_version}"
-	modLocalRuntime "mezz.jei:jei-${project.minecraft_version}-fabric:${project.jei_version}"
-	modLocalRuntime "maven.modrinth:mezzconfig:${project.mezzconfig_version}" // required by JEI at runtime
+	if (!project.hasProperty("nojei")) { // -Pnojei: screenshots without the JEI item list
+		modLocalRuntime "mezz.jei:jei-${project.minecraft_version}-fabric:${project.jei_version}"
+		modLocalRuntime "maven.modrinth:mezzconfig:${project.mezzconfig_version}" // required by JEI at runtime
+	}
 	modCompileOnly "maven.modrinth:jade:${project.jade_version}"
 	modCompileOnly "maven.modrinth:wthit:${project.wthit_version}"
 	if (project.hasProperty("wthit")) {
@@ -64,6 +74,23 @@ dependencies {
 		modLocalRuntime "maven.modrinth:badpackets:${project.badpackets_version}" // required by WTHIT at runtime
 	} else {
 		modLocalRuntime "maven.modrinth:jade:${project.jade_version}"
+	}
+	// -Pshaders: Sodium + Iris in the dev client, to check the renderer with shader packs (run/shaderpacks)
+	if (project.hasProperty("shaders")) {
+		modLocalRuntime "maven.modrinth:sodium:${project.sodium_version}"
+		modLocalRuntime "maven.modrinth:iris:${project.iris_version}"
+		// Iris nests these plain libraries in its jar; the dev classpath doesn't load nested non-mod jars
+		def irisJar = configurations.detachedConfiguration(dependencies.create("maven.modrinth:iris:${project.iris_version}")).singleFile
+		def irisLibs = layout.buildDirectory.dir("iris-libs").get().asFile
+		copy {
+			from(zipTree(irisJar)) {
+				include "META-INF/jars/antlr4-runtime-*.jar", "META-INF/jars/glsl-transformer-*.jar", "META-INF/jars/jcpp-*.jar"
+				eachFile { path = name }
+			}
+			includeEmptyDirs = false
+			into irisLibs
+		}
+		localRuntime fileTree(irisLibs) { include "*.jar" }
 	}
 
 	testImplementation platform("org.junit:junit-bom:${project.junit_version}")
