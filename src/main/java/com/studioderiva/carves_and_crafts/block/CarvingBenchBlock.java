@@ -75,11 +75,14 @@ public class CarvingBenchBlock extends BaseEntityBlock {
 				serverPlayer.displayClientMessage(IN_USE, true);
 				return InteractionResult.CONSUME;
 			}
-			bench.claim(serverPlayer);
-			serverPlayer.openMenu(new SimpleMenuProvider(
+			// claimed after opening: opening closes the player's previous menu, which may be this same bench and
+			// releases it on close
+			if (serverPlayer.openMenu(new SimpleMenuProvider(
 				(containerId, inventory, p) -> new CarvingBenchMenu(containerId, inventory, bench),
 				CarvingBenchBlockEntity.TITLE
-			));
+			)).isPresent()) {
+				bench.claim(serverPlayer);
+			}
 		}
 		return InteractionResult.SUCCESS;
 	}

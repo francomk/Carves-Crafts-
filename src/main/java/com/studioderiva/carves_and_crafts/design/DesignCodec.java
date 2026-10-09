@@ -127,7 +127,8 @@ public final class DesignCodec {
 			int position = -1;
 			for (int i = 0; i < count; i++) {
 				int delta = in.readVarInt();
-				if (delta < 1 || position + delta >= totalPixels) {
+				// compared without adding: position + delta can overflow past Integer.MAX_VALUE
+				if (delta < 1 || delta >= totalPixels - position) {
 					throw new DesignFormatException("Bad sparse position");
 				}
 				position += delta;
@@ -142,7 +143,7 @@ public final class DesignCodec {
 			int position = 0;
 			while (position < totalPixels) {
 				int length = in.readVarInt();
-				if (length < 1 || position + length > totalPixels) {
+				if (length < 1 || length > totalPixels - position) {
 					throw new DesignFormatException("Bad run length");
 				}
 				int value = mapValue(readValue(in, width), cutValue, paletteSize, toInternal);

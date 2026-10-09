@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.6 — security fixes
+
+- A malformed design sent by a modified client, or read from a `.pumpkin` file or a data pack preset, is now
+  rejected cleanly. Before, it threw an unexpected error: the server logged two stack traces per packet (a way
+  to flood the logs), and a bad file in the schematics folder crashed the game whenever the PC view opened.
+- Pumpkin designs inside items are now sent as references in every packet, including the item hover of a
+  death message. Killing someone while holding a renamed bundle or shulker box full of large designs could
+  disconnect every player online.
+- Schematic libraries: each entry now also counts 1 KiB for its name and authors towards the 4 MiB cap, so a
+  library can't grow to hundreds of thousands of near-empty entries. Existing libraries are kept.
+- Carving bench: opening the bench you already have open no longer frees it for another player.
+
 ## 1.0.5 — interface fixes
 
 - Editor: in narrow windows the knife and paint costs get their own row above the buttons, instead of

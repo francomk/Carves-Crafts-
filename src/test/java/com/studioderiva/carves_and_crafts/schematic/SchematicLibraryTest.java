@@ -115,7 +115,23 @@ class SchematicLibraryTest {
 			library = next.get().library();
 			added++;
 		}
-		assertEquals(SchematicLibrary.MAX_DESIGN_BYTES / big.size(), added);
-		assertTrue(library.designBytes() <= SchematicLibrary.MAX_DESIGN_BYTES);
+		assertEquals(SchematicLibrary.MAX_STORED_BYTES / (big.size() + SchematicLibrary.ENTRY_OVERHEAD_BYTES), added);
+		assertTrue(library.storedBytes() <= SchematicLibrary.MAX_STORED_BYTES);
+	}
+
+	@Test
+	void tinyDesignsCountTheirEntryOverhead() {
+		EncodedDesign empty = EncodedDesign.of(new PumpkinDesign(CanvasLayout.uniform(CanvasFace.ALL_MASK, 10, 10)));
+		SchematicLibrary library = SchematicLibrary.EMPTY;
+		int added = 0;
+		while (true) {
+			Optional<SchematicLibrary.Added> next = library.add("empty", "custom_pumpkin", empty, AuthorList.EMPTY, 0, 0);
+			if (next.isEmpty()) {
+				break;
+			}
+			library = next.get().library();
+			added++;
+		}
+		assertEquals(SchematicLibrary.MAX_STORED_BYTES / (empty.size() + SchematicLibrary.ENTRY_OVERHEAD_BYTES), added);
 	}
 }

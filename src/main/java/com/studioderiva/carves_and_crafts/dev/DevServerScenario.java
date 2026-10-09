@@ -20,6 +20,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -34,7 +36,8 @@ import net.minecraft.world.level.block.Blocks;
  * {@code ./gradlew runRemote -Pscenario=large}): checks that designs larger than the vanilla 32 KiB packet limit
  * reach a real server. On join, the player gets a bench with a blank pumpkin; the client confirms and imports a
  * large design. Then the player's inventory is filled with shulker boxes of large, all different designs and sent in
- * one packet (far over the protocol's 8 MiB if designs were sent whole); the client moves one pumpkin through the
+ * one packet (far over the protocol's 8 MiB if designs were sent whole), followed by a chat message showing every
+ * box as a renamed item (the item hover a death message carries); the client moves one pumpkin through the
  * creative inventory and sends one with a made-up design reference. This checks the results and stops the server.
  */
 public final class DevServerScenario {
@@ -128,6 +131,7 @@ public final class DevServerScenario {
 				log(importedOk, "large design imported on the dedicated server");
 			}
 			log(player != null && filledAt >= 0, "player still connected after an inventory of " + designBytes / 1024 + " KiB of designs");
+			log(player != null && filledAt >= 0, "player still connected after a chat message with every box in item hovers");
 			log(moved, "creative move kept the full design on the server");
 			log(player != null && player.getInventory().getItem(FAKE_SLOT).isEmpty(), "unknown design reference refused");
 			ticks = -1;
@@ -162,6 +166,14 @@ public final class DevServerScenario {
 		player.getInventory().setItem(PROBE_SLOT, probe);
 		player.inventoryMenu.sendAllDataToRemote();
 		CarvesAndCrafts.LOGGER.info("Server scenario: inventory filled with {} KiB of designs", designBytes / 1024);
+		// a renamed item's display name carries the whole item (contents included) in its hover
+		MutableComponent hovers = Component.literal("Boxes:");
+		for (int box = 0; box < SHULKERS; box++) {
+			ItemStack named = player.getInventory().getItem(FIRST_SHULKER_SLOT + box).copy();
+			named.set(DataComponents.CUSTOM_NAME, Component.literal("Box " + box));
+			hovers.append(" ").append(named.getDisplayName());
+		}
+		player.sendSystemMessage(hovers);
 	}
 
 	private static void log(boolean ok, String what) {

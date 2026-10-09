@@ -5,7 +5,8 @@
 	"mixins": [
 		"BlockEntityDataPacketMixin",
 		"CreativeSlotMixin",
-		"LevelChunkBlockEntityInfoMixin"
+		"LevelChunkBlockEntityInfoMixin",
+		"PacketEncoderMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

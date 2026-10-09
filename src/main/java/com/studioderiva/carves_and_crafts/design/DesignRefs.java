@@ -64,7 +64,7 @@ public final class DesignRefs {
 		return entry != null ? entry.design : ref;
 	}
 
-	/** Runs {@code action} with item designs in NBT written as references (block entity data sent to clients). */
+	/** Runs {@code action} with item designs in NBT written as references (packets and block entity data sent to clients). */
 	public static <T> T syncing(Supplier<T> action) {
 		int[] depth = syncDepth.get();
 		depth[0]++;

@@ -60,7 +60,8 @@ public final class EncodedDesign {
 	/**
 	 * Persistent codec of the item component. Writes the complete design, except for a reference when hashing
 	 * (slot sync compares client and server hashes, the client only has references) or while
-	 * {@link DesignRefs#syncing} (block entity data sent to clients, e.g. pumpkins on a shelf). Reads both forms.
+	 * {@link DesignRefs#syncing} (packets being encoded, block entity data sent to clients, e.g. pumpkins on a shelf).
+	 * Reads both forms.
 	 */
 	public static final Codec<EncodedDesign> ITEM_CODEC = new Codec<>() {
 		@Override

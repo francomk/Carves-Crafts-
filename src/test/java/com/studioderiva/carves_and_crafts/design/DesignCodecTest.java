@@ -194,6 +194,18 @@ class DesignCodecTest {
 		assertThrows(DesignFormatException.class, () -> DesignCodec.decode(bytes));
 	}
 
+	@Test
+	void rejectsPositionsPastIntegerOverflow() {
+		// 8x8 front face, one color, sparse: a pixel at 1, then a jump of Integer.MAX_VALUE
+		byte[] sparse = {'D', 'P', 2, 1, 8, 8, 1, (byte) 0xFF, 0, 0, 1, 0,
+			2, 2, 1, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, 0x07, 1};
+		assertThrows(DesignFormatException.class, () -> DesignCodec.decode(sparse));
+		// same canvas, RLE: a run of 1, then a run of Integer.MAX_VALUE
+		byte[] rle = {'D', 'P', 2, 1, 8, 8, 1, (byte) 0xFF, 0, 0, 1, 1,
+			1, 1, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, 0x07, 1};
+		assertThrows(DesignFormatException.class, () -> DesignCodec.decode(rle));
+	}
+
 	private static PumpkinDesign sample() {
 		PumpkinDesign design = new PumpkinDesign(CanvasLayout.uniform(ALL, 16, 16));
 		design.cut(CanvasFace.NORTH, 1, 1);
