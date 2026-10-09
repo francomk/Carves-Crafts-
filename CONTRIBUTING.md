@@ -23,7 +23,7 @@ One idea per message, and check whether somebody already suggested it before pos
 
 ## Bugs
 
-Open an issue, or a ticket on Discord, with:
+Open a ticket on [our Discord](https://discord.gg/pQPWr7vfHu), with:
 
 - the mod version and the Minecraft/Fabric versions, plus any other mod involved (Sodium, Iris, ...),
 - what happened and what you expected,

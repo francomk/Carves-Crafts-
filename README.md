@@ -155,9 +155,9 @@ also says plainly what has **not** been verified yet, including the one finding 
 
 ## Contributing
 
-Ideas, bug reports and pull requests are all welcome — [our Discord](https://discord.gg/pQPWr7vfHu)
-has a channel for each. If an idea of yours ships, your name goes in the credits and in the release
-notes. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Ideas, bug reports and pull requests are all welcome. Found a bug? Open a ticket on
+[our Discord](https://discord.gg/pQPWr7vfHu). If an idea of yours ships, your name goes in the
+credits and in the release notes. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licence
 

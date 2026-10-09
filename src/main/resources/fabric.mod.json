@@ -9,7 +9,8 @@
 	],
 	"contact": {
 		"discord": "https://discord.gg/pQPWr7vfHu",
-		"sources": "https://github.com/francomk/Carves-Crafts-"
+		"sources": "https://github.com/francomk/Carves-Crafts-",
+		"issues": "https://discord.gg/pQPWr7vfHu"
 	},
 	"license": "MIT",
 	"icon": "assets/carves_and_crafts/icon.png",
