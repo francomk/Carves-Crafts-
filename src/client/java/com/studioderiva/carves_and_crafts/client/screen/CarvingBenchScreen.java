@@ -52,9 +52,10 @@ public class CarvingBenchScreen extends AbstractContainerScreen<CarvingBenchMenu
 	private static final int LABEL = 0xFF404040;
 	private static final int ROW_SELECTED = 0xFFFFFFFF;
 	private static final int ROW_HOVER = 0xFFDADADA;
-	private static final int LIST_X = 64;
+	// leaves room for the library button, which has to fit its longest label ("Presets")
+	private static final int LIST_X = 76;
 	private static final int LIST_Y = 18;
-	private static final int LIST_W = 104;
+	private static final int LIST_W = 92;
 	private static final int ROW_H = 20;
 	private static final int PREVIEW = 16;
 	private static final int PAGE_SIZE = SchematicPagePayload.PAGE_SIZE;
@@ -143,7 +144,7 @@ public class CarvingBenchScreen extends AbstractContainerScreen<CarvingBenchMenu
 		presetCopyButton = schematic(Button.builder(Component.translatable("gui.carves_and_crafts.schematic.copy"), b -> sendAction(Action.PRESET_APPLY, selectedId, ""))
 			.bounds(bx, topPos + 60, 56, 18).tooltip(Tooltip.create(Component.translatable("gui.carves_and_crafts.schematic.copy.tip"))).build());
 		libraryButton = schematic(Button.builder(Component.empty(), b -> switchLibrary())
-			.bounds(leftPos + 28, topPos + 18, 32, 18).tooltip(Tooltip.create(Component.translatable("gui.carves_and_crafts.schematic.library.tip"))).build());
+			.bounds(leftPos + 28, topPos + 18, 44, 18).tooltip(Tooltip.create(Component.translatable("gui.carves_and_crafts.schematic.library.tip"))).build());
 		nameBox = schematic(new EditBox(font, leftPos + 4, topPos + 142, 90, 16, Component.translatable("gui.carves_and_crafts.schematic.name")));
 		nameBox.setMaxLength(Schematic.MAX_NAME_LENGTH);
 		nameBox.setHint(Component.translatable("gui.carves_and_crafts.schematic.name"));

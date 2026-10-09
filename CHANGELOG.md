@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.5 — interface fixes
+
+- Editor: in narrow windows the knife and paint costs get their own row above the buttons, instead of
+  running under "Save schematic".
+- Bench, Schematics tab: the World / PC / Presets button is wider, so "Presets" fits instead of
+  scrolling. The list next to it is slightly narrower.
+- Mod Menu: the mod has its real icon, a link to the source code, and bug reports point to a ticket on
+  the Studio Deriva Discord.
+
 ## 1.0.4 — inventory ban fix
 
 - Carved pumpkin items no longer send their design to clients: only an 18-byte reference to it. An

@@ -54,7 +54,9 @@ public class PumpkinEditorScreen extends Screen {
 	private static final int LEFT_W = 76;
 	private static final int RIGHT_W = 124;
 	private static final int TOP_H = 28;
-	private static final int BOTTOM_H = 30;
+	private static final int BUTTON_ROW_H = 30;
+	private static final int COST_ROW_H = 24;
+	private static final int SAVE_BUTTON_X = 290;
 	private static final int SV_SIZE = 100;
 	private static final int HUE_H = 10;
 	private static final int SWATCH = 12;
@@ -98,6 +100,7 @@ public class PumpkinEditorScreen extends Screen {
 	private Button keepButton;
 	private EditBox hexBox;
 	private boolean updatingHex;
+	private int bottomH = BUTTON_ROW_H;
 
 	private enum Drag {
 		NONE,
@@ -133,6 +136,8 @@ public class PumpkinEditorScreen extends Screen {
 		faceButtons.clear();
 		mainWidgets.clear();
 		densityButtons.clear();
+		// narrow windows: the cost lines get their own row above the buttons instead of running under them
+		bottomH = LEFT_W + 6 + costTextWidth() + 4 <= width - SAVE_BUTTON_X ? BUTTON_ROW_H : BUTTON_ROW_H + COST_ROW_H;
 
 		int y = TOP_H + 4;
 		for (Tool t : Tool.values()) {
@@ -166,11 +171,11 @@ public class PumpkinEditorScreen extends Screen {
 		updateHexBox();
 
 		confirmButton = main(Button.builder(Component.translatable("gui.carves_and_crafts.editor.confirm"), b -> confirm())
-			.bounds(width - 166, height - BOTTOM_H + 5, 78, 20).build());
+			.bounds(width - 166, height - BUTTON_ROW_H + 5, 78, 20).build());
 		saveSchematicButton = main(Button.builder(Component.empty(), b -> saveSchematic = !saveSchematic)
-			.bounds(width - 290, height - BOTTOM_H + 5, 120, 20).build());
+			.bounds(width - SAVE_BUTTON_X, height - BUTTON_ROW_H + 5, 120, 20).build());
 		main(Button.builder(Component.translatable("gui.carves_and_crafts.editor.cancel"), b -> requestClose())
-			.bounds(width - 84, height - BOTTOM_H + 5, 78, 20).build());
+			.bounds(width - 84, height - BUTTON_ROW_H + 5, 78, 20).build());
 
 		// one button per density, labelled with the front canvas size
 		List<Integer> densities = model.densities();
@@ -251,7 +256,7 @@ public class PumpkinEditorScreen extends Screen {
 	}
 
 	private int canvasBottom() {
-		return height - BOTTOM_H - 4;
+		return height - bottomH - 4;
 	}
 
 	private int canvasCenterX() {
@@ -317,7 +322,7 @@ public class PumpkinEditorScreen extends Screen {
 		graphics.fill(0, 0, LEFT_W, height, PANEL);
 		graphics.fill(width - RIGHT_W, 0, width, height, PANEL);
 		graphics.fill(LEFT_W, 0, width - RIGHT_W, TOP_H, PANEL);
-		graphics.fill(LEFT_W, height - BOTTOM_H, width - RIGHT_W, height, PANEL);
+		graphics.fill(LEFT_W, height - bottomH, width - RIGHT_W, height, PANEL);
 
 		PumpkinDesign working = session.working();
 		if (working == null) {
@@ -344,7 +349,7 @@ public class PumpkinEditorScreen extends Screen {
 	/** Knife and brush usage of the pending edit against what the bench holds, and the server's color limit. */
 	private void renderCost(GuiGraphics graphics) {
 		DesignEditRules.Cost cost = cost();
-		int y = height - BOTTOM_H + 6;
+		int y = height - bottomH + 6;
 		int x = LEFT_W + 6;
 		int maxColors = menu.maxColors();
 		if (maxColors > 0) {
@@ -362,6 +367,14 @@ public class PumpkinEditorScreen extends Screen {
 			x, y, cost.cuts() > knifeLeft ? WARN : TEXT);
 		graphics.drawString(font, Component.translatable("gui.carves_and_crafts.editor.paint_cost", cost.paints(), paintLeft),
 			x, y + 11, cost.paints() > paintLeft ? WARN : TEXT);
+	}
+
+	/** Widest the cost lines can get: five digits cover the largest canvas (4 faces of 64x64). */
+	private int costTextWidth() {
+		int knife = font.width(Component.translatable("gui.carves_and_crafts.editor.knife_cost", 99999, 99999));
+		int paint = font.width(Component.translatable("gui.carves_and_crafts.editor.paint_cost", 99999, 99999));
+		int creative = font.width(Component.translatable("gui.carves_and_crafts.editor.creative"));
+		return Math.max(Math.max(knife, paint), creative);
 	}
 
 	private DesignEditRules.Cost cost() {
