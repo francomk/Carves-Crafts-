@@ -8,7 +8,8 @@
 		"Studio Deriva"
 	],
 	"contact": {
-		"discord": "https://discord.gg/pQPWr7vfHu"
+		"discord": "https://discord.gg/pQPWr7vfHu",
+		"sources": "https://github.com/francomk/Carves-Crafts-"
 	},
 	"license": "MIT",
 	"icon": "assets/carves_and_crafts/icon.png",

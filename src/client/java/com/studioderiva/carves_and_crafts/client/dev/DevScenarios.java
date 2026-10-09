@@ -979,6 +979,10 @@ public final class DevScenarios {
 			mc.setScreen(new ConfigScreen(null));
 		}));
 		steps.add(new Step(10, mc -> shot(mc, "p11_config")));
+		// the mod's icon as Mod Menu shows it, list filtered to this mod
+		steps.add(new Step(10, mc -> mc.setScreen(new com.terraformersmc.modmenu.gui.ModsScreen(null))));
+		steps.add(new Step(10, mc -> setNameBox(mc, "carves")));
+		steps.add(new Step(10, mc -> shot(mc, "p11_modlist")));
 		steps.add(new Step(5, mc -> {
 			int before = ClientConfig.get().designRenderDistance;
 			mc.screen.onClose();
